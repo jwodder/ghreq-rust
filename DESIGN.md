@@ -35,6 +35,8 @@ Clients
     - Methods:
         - `prepare_request<R: ghreq::Request<T>, T>(r: &R) -> (RequestParts,
           impl [Async]Read)`
+            - IMPORTANT: Apply body headers *before* request headers so that
+              the latter can override the former
             - Should this be public?  What would it be used for?
             - Enclose return values in a `PreparedRequest<R>` struct?
         - `backend_client(&self) -> &C`
@@ -218,6 +220,8 @@ Other
 
 - Include a "tracing" feature (off by default)
 
+- Somehow try to make `tokio` an optional dependency
+
 - `trait HeaderMapExt`
     - `is_json_content_type(&self) -> bool`
     - `content_length(&self) -> Option<u64>`
@@ -227,5 +231,8 @@ Other
             - `last: Option<Url>`
             - `first: Option<Url>`
             - `prev: Option<Url>`
+
+- Give traits impls for `Either` and `&[mut] T where T: Trait` wherever it
+  makes sense
 
 - cf. <https://github.com/snok/container-retention-policy/blob/b439c10ae57ac70bd2301813dc2d0f708dc78f31/src/client/builder.rs#L70> regarding rate limiting

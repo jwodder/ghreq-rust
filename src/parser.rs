@@ -1,9 +1,8 @@
-use crate::{HeaderMapExt, Response, ResponseParts};
+use crate::{CommonError, HeaderMapExt, Response, ResponseParts};
 use bstr::ByteVec;
 use serde::de::DeserializeOwned;
 use std::io::Write;
 use std::marker::PhantomData;
-use thiserror::Error;
 
 pub trait ResponseParser {
     type Output;
@@ -25,7 +24,7 @@ impl Ignore {
 
 impl ResponseParser for Ignore {
     type Output = ();
-    type Error = ParseError;
+    type Error = CommonError;
 
     fn handle_parts(&mut self, _parts: &ResponseParts) {}
 
@@ -38,7 +37,7 @@ impl ResponseParser for Ignore {
 
 impl ResponseParser for Vec<u8> {
     type Output = Vec<u8>;
-    type Error = ParseError;
+    type Error = CommonError;
 
     fn handle_parts(&mut self, parts: &ResponseParts) {
         if let Some(size) = parts
@@ -70,7 +69,7 @@ impl Utf8Text {
 
 impl ResponseParser for Utf8Text {
     type Output = String;
-    type Error = ParseError;
+    type Error = CommonError;
 
     fn handle_parts(&mut self, parts: &ResponseParts) {
         self.0.handle_parts(parts);
@@ -96,7 +95,7 @@ impl LossyUtf8Text {
 
 impl ResponseParser for LossyUtf8Text {
     type Output = String;
-    type Error = ParseError;
+    type Error = CommonError;
 
     fn handle_parts(&mut self, parts: &ResponseParts) {
         self.0.handle_parts(parts);
@@ -128,7 +127,7 @@ impl<T> JsonResponse<T> {
 
 impl<T: DeserializeOwned> ResponseParser for JsonResponse<T> {
     type Output = T;
-    type Error = ParseError;
+    type Error = CommonError;
 
     fn handle_parts(&mut self, parts: &ResponseParts) {
         self.buf.handle_parts(parts);
@@ -189,7 +188,7 @@ impl<W> ToWriter<W> {
 
 impl<W: Write> ResponseParser for ToWriter<W> {
     type Output = ();
-    type Error = ParseError;
+    type Error = CommonError;
 
     fn handle_parts(&mut self, _parts: &ResponseParts) {}
 
@@ -208,16 +207,4 @@ impl<W: Write> ResponseParser for ToWriter<W> {
             Ok(())
         }
     }
-}
-
-#[derive(Debug, Error)]
-pub enum ParseError {
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
-
-    #[error(transparent)]
-    Utf8(#[from] std::str::Utf8Error),
-
-    #[error(transparent)]
-    Json(#[from] serde_json::Error),
 }
