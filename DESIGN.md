@@ -31,7 +31,7 @@ Clients
       being applied to them; the headers & timeout are only applied when
       preparing each request.
 
-- `[Async]Ghreq<C: {Sync,Async}BackendClient>`
+- `[Async]Ghreq<C: [Async]Backend>`
     - Methods:
         - `prepare_request<R: ghreq::Request<T>, T>(r: &R) -> (RequestParts,
           impl [Async]Read)`
@@ -49,14 +49,14 @@ Clients
           iterator/stream of values
         - `stream_request<R, _>(&self, req: R) -> Result<Response<[Async]Read>,
           Error…>` — do request, return reader for/stream of raw bytes
-    - `type GhreqUreq = SyncGhreq<ureq::Agent>`
+        - do request, return raw backend response?
+    - `type GhreqUreq = Ghreq<ureq::Agent>`
     - `type GhreqReqwest = AsyncGhreq<reqwest::Client>`
 
-- `trait {Sync,Async}BackendClient` — Implemented on backend clients
-    - Rename to just `*Backend`?
+- `trait [Async]Backend` — Implemented on backend clients session types
     - `type Request`
-    - `type Response: [Async]SyncResponse`
-        - `trait {Sync,Async}Response`:
+    - `type Response: [Async]BackendResponse`
+        - `trait [Async]BackendResponse`:
             - `url() -> Url`
             - `status() -> StatusCode`
             - `headers() -> HeaderMap`
