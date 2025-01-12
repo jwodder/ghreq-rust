@@ -15,6 +15,8 @@ exclude = ["/.*"]
 [dependencies]
 bstr = "1.11.3"
 http = "1.2.0"
+mime = "0.3.17"
+parse_link_header = { version = "0.4.0", features = ["url"] }
 serde = "1.0.217"
 serde_json = "1.0.135"
 thiserror = "2.0.11"

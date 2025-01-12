@@ -1,4 +1,4 @@
-use crate::{Response, ResponseParts};
+use crate::{HeaderMapExt, Response, ResponseParts};
 use bstr::ByteVec;
 use serde::de::DeserializeOwned;
 use std::io::Write;
@@ -40,8 +40,14 @@ impl ResponseParser for Vec<u8> {
     type Output = Vec<u8>;
     type Error = ParseError;
 
-    fn handle_parts(&mut self, _parts: &ResponseParts) {
-        // TODO: Set capacity to content-length
+    fn handle_parts(&mut self, parts: &ResponseParts) {
+        if let Some(size) = parts
+            .headers()
+            .content_length()
+            .and_then(|sz| usize::try_from(sz).ok())
+        {
+            self.reserve(size);
+        }
     }
 
     fn handle_bytes(&mut self, buf: &[u8]) {

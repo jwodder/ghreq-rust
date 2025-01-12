@@ -1,6 +1,8 @@
+mod header_ext;
 mod method;
 mod parser;
 mod response;
+pub use crate::header_ext::*;
 pub use crate::method::*;
 pub use crate::parser::*;
 pub use crate::response::*;
