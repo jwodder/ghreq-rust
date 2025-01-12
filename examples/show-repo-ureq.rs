@@ -1,5 +1,7 @@
 use clap::Parser;
-use ghreq::{ClientConfig, CommonError, Endpoint, JsonResponse, Method, Request, ResponseParser};
+use ghreq::{
+    ClientConfig, CommonError, Endpoint, HttpUrl, JsonResponse, Method, Request, ResponseParser,
+};
 use serde::{Deserialize, Serialize};
 use std::process::ExitCode;
 
@@ -34,6 +36,11 @@ struct Repository {
     full_name: String,
     description: Option<String>,
     topics: Vec<String>,
+    html_url: HttpUrl,
+    stargazers_count: u64,
+    forks_count: u64,
+    homepage: Option<String>,
+    language: Option<String>,
 }
 
 #[derive(Clone, Debug, Eq, Parser, PartialEq)]
@@ -61,17 +68,33 @@ fn main() -> ExitCode {
                         .expect("serializing Repository should not fail")
                 );
             } else {
-                println!("Full name: {}", repo.full_name);
+                println!("Repository: {}", repo.full_name);
+
+                println!("URL: {}", repo.html_url);
+
                 println!(
                     "Description: {}",
                     repo.description.as_deref().unwrap_or("-")
                 );
+
+                println!("Language: {}", repo.language.as_deref().unwrap_or("-"));
+
+                print!("Homepage: ");
+                if let Some(hp) = repo.homepage.as_ref().filter(|hp| !hp.is_empty()) {
+                    println!("{hp}");
+                } else {
+                    println!("-");
+                }
+
                 print!("Topics: ");
                 if repo.topics.is_empty() {
                     println!("-");
                 } else {
                     println!("{}", repo.topics.join(", "));
                 }
+
+                println!("Stars: {}", repo.stargazers_count);
+                println!("Forks: {}", repo.forks_count);
             }
             ExitCode::SUCCESS
         }

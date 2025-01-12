@@ -1,7 +1,8 @@
 use crate::Endpoint;
 use serde::{
     de::{Deserializer, Error},
-    Deserialize,
+    ser::Serializer,
+    Deserialize, Serialize,
 };
 use std::fmt;
 use thiserror::Error;
@@ -119,6 +120,12 @@ impl std::str::FromStr for HttpUrl {
         } else {
             Err(ParseHttpUrlError::BadScheme)
         }
+    }
+}
+
+impl Serialize for HttpUrl {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        self.0.serialize(serializer)
     }
 }
 
