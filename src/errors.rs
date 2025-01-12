@@ -1,9 +1,8 @@
-use crate::{Method, Response, ResponseParts};
+use crate::{HttpUrl, Method, Response, ResponseParts};
 use std::borrow::Cow;
 use std::error::Error as StdError;
 use std::fmt;
 use thiserror::Error;
-use url::Url;
 
 #[derive(Debug, Error)]
 pub enum CommonError {
@@ -47,11 +46,11 @@ impl ErrorBody {
 pub struct ErrorResponse(Response<ErrorBody>);
 
 impl ErrorResponse {
-    pub fn initial_url(&self) -> &Url {
+    pub fn initial_url(&self) -> &HttpUrl {
         self.0.initial_url()
     }
 
-    pub fn url(&self) -> &Url {
+    pub fn url(&self) -> &HttpUrl {
         self.0.url()
     }
 
@@ -102,13 +101,13 @@ impl From<ErrorResponse> for Response<ErrorBody> {
 
 #[derive(Debug)]
 pub struct Error<BackendError, E = CommonError> {
-    url: Url,
+    url: HttpUrl,
     method: Method,
     payload: ErrorPayload<BackendError, E>,
 }
 
 impl<BackendError, E> Error<BackendError, E> {
-    pub fn new(url: Url, method: Method, payload: ErrorPayload<BackendError, E>) -> Self {
+    pub fn new(url: HttpUrl, method: Method, payload: ErrorPayload<BackendError, E>) -> Self {
         Error {
             url,
             method,
@@ -116,7 +115,7 @@ impl<BackendError, E> Error<BackendError, E> {
         }
     }
 
-    pub fn url(&self) -> &Url {
+    pub fn url(&self) -> &HttpUrl {
         &self.url
     }
 

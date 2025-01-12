@@ -1,10 +1,9 @@
 use crate::{
-    Backend, BackendResponse, Error, ErrorPayload, PreparedRequest, Request, RequestBody,
+    Backend, BackendResponse, Error, ErrorPayload, HttpUrl, PreparedRequest, Request, RequestBody,
     RequestParts, Response, ResponseParserExt, ResponseParts,
 };
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 use std::time::Duration;
-use url::Url;
 
 pub static DEFAULT_ACCEPT: &str = "application/vnd.github+json";
 
@@ -27,7 +26,7 @@ pub static DEFAULT_USER_AGENT: &str = concat!(
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ClientConfig {
-    base_url: Url,
+    base_url: HttpUrl,
     headers: HeaderMap,
     timeout: Option<Duration>,
     // TODO: mutation delay and retry config
@@ -42,7 +41,7 @@ impl ClientConfig {
             }
         }
 
-        let Ok(base_url) = DEFAULT_API_URL.parse::<Url>() else {
+        let Ok(base_url) = DEFAULT_API_URL.parse::<HttpUrl>() else {
             unreachable!("DEFAULT_API_URL should be a valid URL");
         };
         let mut headers = HeaderMap::new();
@@ -65,7 +64,7 @@ impl ClientConfig {
         }
     }
 
-    pub fn set_base_url(&mut self, url: Url) {
+    pub fn set_base_url(&mut self, url: HttpUrl) {
         self.base_url = url;
     }
 
@@ -116,8 +115,11 @@ impl ClientConfig {
     fn prepare_request<R: Request, BE>(
         &self,
         req: &R,
-    ) -> Result<PreparedRequest<impl std::io::Read>, Error<BE, R::Error>> {
-        let mut url = todo!("self.base_url ~join~ req.endpoint() ~join~ req.params()");
+    ) -> Result<PreparedRequest<impl std::io::Read + 'static>, Error<BE, R::Error>> {
+        let mut url = self.base_url.join_endpoint(req.endpoint());
+        for (name, value) in req.params() {
+            url.append_query_param(&name, &value);
+        }
         let method = req.method();
         let timeout = req.timeout().or(self.timeout);
         let body = req.body();
@@ -127,7 +129,7 @@ impl ClientConfig {
         headers.extend(body.headers());
         headers.extend(req.headers());
         let parts = RequestParts {
-            url,
+            url: url.clone(),
             method,
             headers,
             timeout,

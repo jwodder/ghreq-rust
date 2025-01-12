@@ -1,14 +1,14 @@
-use crate::{CommonError, Method, ResponseParser};
+use crate::{CommonError, HttpUrl, Method, ResponseParser};
 use serde::Serialize;
 use std::fs::File;
 use std::io::Cursor;
 use std::path::PathBuf;
 use std::time::Duration;
-use url::Url;
 
 pub trait Request {
     type Output;
     type Error;
+    type Body: RequestBody<Error: Into<Self::Error>>;
 
     fn endpoint(&self) -> Endpoint;
 
@@ -27,19 +27,19 @@ pub trait Request {
         None
     }
 
-    fn body(&self) -> impl RequestBody<Error: Into<Self::Error>>;
+    fn body(&self) -> Self::Body;
 
     fn parser(&self) -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>>;
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum Endpoint {
-    Url(Url),
+    Url(HttpUrl),
     Path(Vec<String>),
 }
 
-impl From<Url> for Endpoint {
-    fn from(value: Url) -> Endpoint {
+impl From<HttpUrl> for Endpoint {
+    fn from(value: HttpUrl) -> Endpoint {
         Endpoint::Url(value)
     }
 }
@@ -57,10 +57,10 @@ pub trait RequestBody {
         http::header::HeaderMap::new()
     }
 
-    fn into_read(self) -> Result<impl std::io::Read, Self::Error>;
+    fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error>;
 
     // TODO: Should this method be async?
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead, Self::Error>;
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error>;
 }
 
 impl RequestBody for () {
@@ -75,11 +75,11 @@ impl RequestBody for () {
         headers
     }
 
-    fn into_read(self) -> Result<impl std::io::Read, Self::Error> {
+    fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         Ok(std::io::empty())
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
         Ok(tokio::io::empty())
     }
 }
@@ -99,11 +99,11 @@ impl RequestBody for Vec<u8> {
         headers
     }
 
-    fn into_read(self) -> Result<impl std::io::Read, Self::Error> {
+    fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         Ok(Cursor::new(self))
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
         Ok(Cursor::new(self))
     }
 }
@@ -123,11 +123,11 @@ impl RequestBody for String {
         headers
     }
 
-    fn into_read(self) -> Result<impl std::io::Read, Self::Error> {
+    fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         Ok(Cursor::new(self.into_bytes()))
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
         Ok(Cursor::new(self.into_bytes()))
     }
 }
@@ -155,11 +155,11 @@ impl<T: Serialize> RequestBody for JsonBody<T> {
         headers
     }
 
-    fn into_read(self) -> Result<impl std::io::Read, Self::Error> {
+    fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         Ok(Cursor::new(serde_json::to_vec(&self.0)?))
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
         Ok(Cursor::new(serde_json::to_vec(&self.0)?))
     }
 }
@@ -190,11 +190,11 @@ impl RequestBody for FilePathBody {
         headers
     }
 
-    fn into_read(self) -> Result<impl std::io::Read, Self::Error> {
+    fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         File::open(self.0).map_err(Into::into)
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
         // ASYNC: tokio::fs::File::open(self.0).await.map_err(Into::into)
         let fp = File::open(self.0)?;
         Ok(tokio::fs::File::from_std(fp))
@@ -218,11 +218,11 @@ impl RequestBody for File {
         headers
     }
 
-    fn into_read(self) -> Result<impl std::io::Read, Self::Error> {
+    fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         Ok(self)
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
         Ok(tokio::fs::File::from_std(self))
     }
 }

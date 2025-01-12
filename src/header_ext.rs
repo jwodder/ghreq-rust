@@ -1,5 +1,5 @@
+use crate::HttpUrl;
 use mime::{Mime, JSON};
-use url::Url;
 
 pub trait HeaderMapExt {
     fn content_type_is_json(&self) -> bool;
@@ -32,18 +32,26 @@ impl HeaderMapExt for http::header::HeaderMap {
             return PaginationLinks::default();
         };
         PaginationLinks {
-            first: links.remove("first").map(|lnk| lnk.uri),
-            prev: links.remove("prev").map(|lnk| lnk.uri),
-            next: links.remove("next").map(|lnk| lnk.uri),
-            last: links.remove("last").map(|lnk| lnk.uri),
+            first: links
+                .remove("first")
+                .and_then(|lnk| HttpUrl::try_from(lnk.uri).ok()),
+            prev: links
+                .remove("prev")
+                .and_then(|lnk| HttpUrl::try_from(lnk.uri).ok()),
+            next: links
+                .remove("next")
+                .and_then(|lnk| HttpUrl::try_from(lnk.uri).ok()),
+            last: links
+                .remove("last")
+                .and_then(|lnk| HttpUrl::try_from(lnk.uri).ok()),
         }
     }
 }
 
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct PaginationLinks {
-    pub first: Option<Url>,
-    pub prev: Option<Url>,
-    pub next: Option<Url>,
-    pub last: Option<Url>,
+    pub first: Option<HttpUrl>,
+    pub prev: Option<HttpUrl>,
+    pub next: Option<HttpUrl>,
+    pub last: Option<HttpUrl>,
 }

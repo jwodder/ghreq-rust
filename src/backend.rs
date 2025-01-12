@@ -1,7 +1,6 @@
-use crate::Method;
+use crate::{HttpUrl, Method};
 use std::future::Future;
 use std::time::Duration;
-use url::Url;
 
 pub trait Backend {
     type Request;
@@ -19,7 +18,7 @@ pub trait Backend {
 }
 
 pub trait BackendResponse {
-    fn url(&self) -> Url;
+    fn url(&self) -> HttpUrl;
     fn status(&self) -> http::status::StatusCode;
     fn headers(&self) -> http::header::HeaderMap;
     fn body_reader(self) -> impl std::io::Read;
@@ -41,9 +40,9 @@ pub trait AsyncBackend {
 }
 
 pub trait AsyncBackendResponse {
-    fn url(&self) -> &Url;
+    fn url(&self) -> HttpUrl;
     fn status(&self) -> http::status::StatusCode;
-    fn headers(&self) -> &http::header::HeaderMap;
+    fn headers(&self) -> http::header::HeaderMap;
     fn body_reader(self) -> impl tokio::io::AsyncRead;
 }
 
@@ -54,7 +53,7 @@ pub struct PreparedRequest<T> {
 }
 
 impl<T> PreparedRequest<T> {
-    pub fn url(&self) -> &Url {
+    pub fn url(&self) -> &HttpUrl {
         &self.parts.url
     }
 
@@ -89,7 +88,7 @@ impl<T> PreparedRequest<T> {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RequestParts {
-    pub url: Url,
+    pub url: HttpUrl,
     pub method: Method,
     pub headers: http::header::HeaderMap,
     pub timeout: Option<Duration>,

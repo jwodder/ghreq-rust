@@ -1,21 +1,20 @@
-use crate::Method;
-use url::Url;
+use crate::{HttpUrl, Method};
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResponseParts {
-    pub(crate) initial_url: Url,
-    pub(crate) url: Url,
+    pub(crate) initial_url: HttpUrl,
+    pub(crate) url: HttpUrl,
     pub(crate) method: Method,
     pub(crate) status: http::status::StatusCode,
     pub(crate) headers: http::header::HeaderMap,
 }
 
 impl ResponseParts {
-    pub fn initial_url(&self) -> &Url {
+    pub fn initial_url(&self) -> &HttpUrl {
         &self.initial_url
     }
 
-    pub fn url(&self) -> &Url {
+    pub fn url(&self) -> &HttpUrl {
         &self.url
     }
 
@@ -39,11 +38,11 @@ pub struct Response<T> {
 }
 
 impl<T> Response<T> {
-    pub fn initial_url(&self) -> &Url {
+    pub fn initial_url(&self) -> &HttpUrl {
         self.parts.initial_url()
     }
 
-    pub fn url(&self) -> &Url {
+    pub fn url(&self) -> &HttpUrl {
         self.parts.url()
     }
 
