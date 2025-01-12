@@ -3,11 +3,11 @@ use url::Url;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ResponseParts {
-    initial_url: Url,
-    url: Url,
-    method: Method,
-    status: http::status::StatusCode,
-    headers: http::header::HeaderMap,
+    pub(crate) initial_url: Url,
+    pub(crate) url: Url,
+    pub(crate) method: Method,
+    pub(crate) status: http::status::StatusCode,
+    pub(crate) headers: http::header::HeaderMap,
 }
 
 impl ResponseParts {

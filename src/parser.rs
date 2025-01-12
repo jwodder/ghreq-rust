@@ -1,12 +1,14 @@
-use crate::{CommonError, HeaderMapExt, Response, ResponseParts};
+use crate::{CommonError, HeaderMapExt, ParseResponseError, Response, ResponseParts};
 use bstr::ByteVec;
 use serde::de::DeserializeOwned;
 use std::io::Write;
 use std::marker::PhantomData;
 
-pub trait ResponseParser {
+pub const READ_BLOCK_SIZE: usize = 2048;
+
+pub trait ResponseParser: Sized {
     type Output;
-    type Error;
+    type Error: From<std::io::Error>;
 
     fn handle_parts(&mut self, parts: &ResponseParts);
     fn handle_bytes(&mut self, buf: &[u8]);
@@ -208,3 +210,27 @@ impl<W: Write> ResponseParser for ToWriter<W> {
         }
     }
 }
+
+pub trait ResponseParserExt: ResponseParser {
+    fn parse_response<R: std::io::Read>(
+        mut self,
+        resp: Response<R>,
+    ) -> Result<Self::Output, ParseResponseError<Self::Error>> {
+        let (parts, mut body) = resp.into_parts();
+        self.handle_parts(&parts);
+        let mut buf = vec![0u8; READ_BLOCK_SIZE];
+        loop {
+            match body.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => self.handle_bytes(&buf[..n]),
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(e) => return Err(ParseResponseError::Read(e)),
+            }
+        }
+        self.end().map_err(ParseResponseError::Parse)
+    }
+
+    // TODO: map(), try_map()
+}
+
+impl<R: ResponseParser> ResponseParserExt for R {}

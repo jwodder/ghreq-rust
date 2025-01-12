@@ -19,9 +19,9 @@ pub trait Backend {
 }
 
 pub trait BackendResponse {
-    fn url(&self) -> &Url;
+    fn url(&self) -> Url;
     fn status(&self) -> http::status::StatusCode;
-    fn headers(&self) -> &http::header::HeaderMap;
+    fn headers(&self) -> http::header::HeaderMap;
     fn body_reader(self) -> impl std::io::Read;
 }
 
@@ -51,6 +51,40 @@ pub trait AsyncBackendResponse {
 pub struct PreparedRequest<T> {
     parts: RequestParts,
     body: T,
+}
+
+impl<T> PreparedRequest<T> {
+    pub fn url(&self) -> &Url {
+        &self.parts.url
+    }
+
+    pub fn method(&self) -> Method {
+        self.parts.method
+    }
+
+    pub fn headers(&self) -> &http::header::HeaderMap {
+        &self.parts.headers
+    }
+
+    pub fn body_ref(&self) -> &T {
+        &self.body
+    }
+
+    pub fn body_mut(&mut self) -> &mut T {
+        &mut self.body
+    }
+
+    pub fn into_body(self) -> T {
+        self.body
+    }
+
+    pub fn into_parts(self) -> (RequestParts, T) {
+        (self.parts, self.body)
+    }
+
+    pub fn from_parts(parts: RequestParts, body: T) -> PreparedRequest<T> {
+        PreparedRequest { parts, body }
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

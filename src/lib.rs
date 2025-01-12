@@ -1,4 +1,5 @@
 mod backend;
+mod client;
 mod errors;
 mod header_ext;
 mod method;
@@ -6,6 +7,7 @@ mod parser;
 mod request;
 mod response;
 pub use crate::backend::*;
+pub use crate::client::*;
 pub use crate::errors::*;
 pub use crate::header_ext::*;
 pub use crate::method::*;

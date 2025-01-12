@@ -178,11 +178,8 @@ pub enum ErrorPayload<BackendError, E = CommonError> {
     #[error("server responded with status {}", .0.status())]
     Status(#[source] ErrorResponse),
 
-    #[error("failed to read response body")]
-    ReadResponse(#[source] std::io::Error),
-
-    #[error("failed to parse response")]
-    ParseResponse(#[source] E),
+    #[error(transparent)]
+    ParseResponse(ParseResponseError<E>),
 }
 
 impl<BackendError, E> ErrorPayload<BackendError, E> {
@@ -191,6 +188,27 @@ impl<BackendError, E> ErrorPayload<BackendError, E> {
             r.pretty_text()
         } else {
             None
+        }
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum ParseResponseError<E> {
+    #[error("error reading response body")]
+    Read(std::io::Error),
+
+    #[error("error parsing response body")]
+    Parse(#[source] E),
+}
+
+impl<E> ParseResponseError<E> {
+    pub(crate) fn convert_parse_error<E2>(self) -> ParseResponseError<E2>
+    where
+        E: Into<E2>,
+    {
+        match self {
+            ParseResponseError::Read(e) => ParseResponseError::Read(e),
+            ParseResponseError::Parse(e) => ParseResponseError::Parse(e.into()),
         }
     }
 }

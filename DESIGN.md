@@ -235,4 +235,7 @@ Other
 - Give traits impls for `Either` and `&[mut] T where T: Trait` wherever it
   makes sense
 
+- PROBLEM: In order to support retrying, there will need to be a way to
+  determine whether a given body is retryiable
+
 - cf. <https://github.com/snok/container-retention-policy/blob/b439c10ae57ac70bd2301813dc2d0f708dc78f31/src/client/builder.rs#L70> regarding rate limiting
