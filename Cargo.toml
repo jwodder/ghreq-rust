@@ -21,10 +21,14 @@ serde = "1.0.217"
 serde_json = "1.0.135"
 thiserror = "2.0.11"
 tokio = { version = "1.43.0", "features" = ["fs", "io-util"] }
+ureq = { version = "2.12.1", optional = true, features = ["json"] }
 url = { version = "2.5.4", features = ["serde"] }
 
 [dev-dependencies]
 rstest = { version = "0.24.0", default-features = false }
+
+[features]
+ureq = ["dep:ureq"]
 
 [lints.rust]
 # Lint groups:

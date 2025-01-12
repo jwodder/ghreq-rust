@@ -111,6 +111,13 @@ impl ClientConfig {
     }
     */
 
+    #[cfg(feature = "ureq")]
+    pub fn with_ureq(self) -> UreqClient {
+        self.with_backend(ureq::AgentBuilder::new().build())
+    }
+
+    // TODO: with_reqwest(self) — use default backend values
+
     // PRIVATE
     fn prepare_request<R: Request, BE>(
         &self,
@@ -143,8 +150,6 @@ impl ClientConfig {
         };
         Ok(PreparedRequest::from_parts(parts, body))
     }
-
-    // TODO: with_ureq(self), with_reqwest(self) — use default backend values
 }
 
 impl Default for ClientConfig {
@@ -224,3 +229,6 @@ impl<B: Backend> Client<B> {
         }
     }
 }
+
+#[cfg(feature = "ureq")]
+pub type UreqClient = Client<ureq::Agent>;
