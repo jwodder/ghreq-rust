@@ -12,6 +12,7 @@ pub trait ResponseParser: Sized {
 
     fn handle_parts(&mut self, parts: &ResponseParts);
     fn handle_bytes(&mut self, buf: &[u8]);
+    // This method may panic if handle_parts() was never called
     fn end(self) -> Result<Self::Output, Self::Error>;
 }
 

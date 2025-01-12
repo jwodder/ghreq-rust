@@ -1,6 +1,6 @@
 use crate::{
-    Backend, BackendResponse, Error, ErrorPayload, HttpUrl, PreparedRequest, Request, RequestBody,
-    RequestParts, Response, ResponseParserExt, ResponseParts,
+    Backend, BackendResponse, Error, ErrorPayload, ErrorResponseParser, HttpUrl, PreparedRequest,
+    Request, RequestBody, RequestParts, Response, ResponseParserExt, ResponseParts,
 };
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 use std::time::Duration;
@@ -199,15 +199,28 @@ impl<B: Backend> Client<B> {
         let body = resp.body_reader();
         let response = Response::from_parts(parts, body);
         if response.status().is_client_error() || response.status().is_server_error() {
-            todo!()
-        }
-        let parser = req.parser();
-        parser.parse_response(response).map_err(|e| {
-            Error::new(
+            let parser = ErrorResponseParser::new();
+            let err_resp = parser.parse_response(response).map_err(|e| {
+                Error::new(
+                    initial_url.clone(),
+                    method,
+                    ErrorPayload::ParseResponse(e.convert_parse_error::<R::Error>()),
+                )
+            })?;
+            Err(Error::new(
                 initial_url,
                 method,
-                ErrorPayload::ParseResponse(e.convert_parse_error()),
-            )
-        })
+                ErrorPayload::Status(err_resp),
+            ))
+        } else {
+            let parser = req.parser();
+            parser.parse_response(response).map_err(|e| {
+                Error::new(
+                    initial_url,
+                    method,
+                    ErrorPayload::ParseResponse(e.convert_parse_error()),
+                )
+            })
+        }
     }
 }

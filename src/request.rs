@@ -7,7 +7,7 @@ use std::time::Duration;
 
 pub trait Request {
     type Output;
-    type Error;
+    type Error: From<CommonError>;
     type Body: RequestBody<Error: Into<Self::Error>>;
 
     fn endpoint(&self) -> Endpoint;
