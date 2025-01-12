@@ -4,12 +4,13 @@ use std::fs::File;
 use std::io::Cursor;
 use std::path::PathBuf;
 use std::time::Duration;
+use url::Url;
 
 pub trait Request {
     type Output;
     type Error;
 
-    fn endpoint(&self) -> String; // TODO: Adjust return type
+    fn endpoint(&self) -> Endpoint;
 
     fn method(&self) -> Method;
 
@@ -29,6 +30,24 @@ pub trait Request {
     fn body(&self) -> impl RequestBody<Error: Into<Self::Error>>;
 
     fn parser(&self) -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>>;
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Endpoint {
+    Url(Url),
+    Path(Vec<String>),
+}
+
+impl From<Url> for Endpoint {
+    fn from(value: Url) -> Endpoint {
+        Endpoint::Url(value)
+    }
+}
+
+impl<S: Into<String>> FromIterator<S> for Endpoint {
+    fn from_iter<I: IntoIterator<Item = S>>(iter: I) -> Self {
+        Endpoint::Path(iter.into_iter().map(Into::into).collect())
+    }
 }
 
 pub trait RequestBody {
