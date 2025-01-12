@@ -14,6 +14,8 @@ exclude = ["/.*"]
 
 [dependencies]
 bstr = "1.11.3"
+clap = { version = "4.5.26", optional = true, features = ["derive"] }
+gh-token = { version = "0.1.7", optional = true }
 http = "1.2.0"
 mime = "0.3.17"
 parse_link_header = { version = "0.4.0", features = ["url"] }
@@ -28,7 +30,12 @@ url = { version = "2.5.4", features = ["serde"] }
 rstest = { version = "0.24.0", default-features = false }
 
 [features]
+examples = ["dep:clap", "dep:gh-token", "serde/derive"]
 ureq = ["dep:ureq"]
+
+[[example]]
+name = "show-repo-ureq"
+required-features = ["examples", "ureq"]
 
 [lints.rust]
 # Lint groups:
