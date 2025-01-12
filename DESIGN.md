@@ -136,7 +136,7 @@ Responses
 - `trait ResponseParser`:
     - `type Output`
     - `type Error`
-    - `from_parts(&mut self, m: &ResponseParts)` — Called to start processing
+    - `process_parts(&mut self, m: &ResponseParts)` — Called to start processing
       of the response
     - `feed_bytes(&mut self, b: Vec<u8>)` — Called repeatedly for chunks of the
       response body
