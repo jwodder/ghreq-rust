@@ -1,5 +1,8 @@
-use crate::client::{Backend, BackendResponse, Client, RequestParts};
-use crate::HttpUrl;
+use crate::{
+    client::{Backend, BackendResponse, Client, RequestParts},
+    errors::{CommonError, Error, ErrorPayload},
+    HttpUrl,
+};
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 
 pub type UreqClient = Client<ureq::Agent>;
@@ -67,3 +70,7 @@ impl BackendResponse for ureq::Response {
         self.into_reader()
     }
 }
+
+pub type UreqError<E = CommonError> = Error<ureq::Error, E>;
+
+pub type UreqErrorPayload<E = CommonError> = ErrorPayload<ureq::Error, E>;

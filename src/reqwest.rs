@@ -1,6 +1,11 @@
-use crate::client::tokio::{AsyncBackend, AsyncBackendResponse, AsyncClient};
-use crate::client::RequestParts;
-use crate::HttpUrl;
+use crate::{
+    client::{
+        tokio::{AsyncBackend, AsyncBackendResponse, AsyncClient},
+        RequestParts,
+    },
+    errors::{CommonError, Error, ErrorPayload},
+    HttpUrl,
+};
 use futures_util::TryStreamExt;
 use tokio_util::io::{ReaderStream, StreamReader};
 
@@ -49,3 +54,7 @@ impl AsyncBackendResponse for reqwest::Response {
         StreamReader::new(self.bytes_stream().map_err(std::io::Error::other))
     }
 }
+
+pub type ReqwestError<E = CommonError> = Error<reqwest::Error, E>;
+
+pub type ReqwestErrorPayload<E = CommonError> = ErrorPayload<reqwest::Error, E>;
