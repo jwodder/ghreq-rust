@@ -7,6 +7,7 @@ use crate::{
     HttpUrl,
 };
 use futures_util::TryStreamExt;
+use std::future::Future;
 use tokio_util::io::{ReaderStream, StreamReader};
 
 pub type ReqwestClient = AsyncClient<reqwest::Client>;
@@ -26,14 +27,13 @@ impl AsyncBackend for reqwest::Client {
         req
     }
 
-    async fn send<R: tokio::io::AsyncRead + Send + 'static>(
+    fn send<R: tokio::io::AsyncRead + Send + 'static>(
         &self,
         r: Self::Request,
         body: R,
-    ) -> Result<Self::Response, Self::Error> {
+    ) -> impl Future<Output = Result<Self::Response, Self::Error>> + Send + 'static {
         r.body(reqwest::Body::wrap_stream(ReaderStream::new(body)))
             .send()
-            .await
     }
 }
 

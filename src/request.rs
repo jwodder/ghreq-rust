@@ -32,7 +32,8 @@ pub trait Request {
 
     fn body(&self) -> Self::Body;
 
-    fn parser(&self) -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>>;
+    fn parser(&self)
+        -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>> + Send;
 }
 
 pub trait RequestBody {

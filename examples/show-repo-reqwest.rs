@@ -35,7 +35,9 @@ impl Request for ShowRepository {
 
     fn body(&self) {}
 
-    fn parser(&self) -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>> {
+    fn parser(
+        &self,
+    ) -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>> + Send {
         JsonResponse::new()
     }
 }
