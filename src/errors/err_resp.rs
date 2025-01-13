@@ -1,4 +1,9 @@
-use crate::{CommonError, HeaderMapExt, HttpUrl, Method, Response, ResponseParser, ResponseParts};
+use super::CommonError;
+use crate::{
+    parser::ResponseParser,
+    response::{Response, ResponseParts},
+    HeaderMapExt, HttpUrl, Method,
+};
 use std::borrow::Cow;
 use thiserror::Error;
 

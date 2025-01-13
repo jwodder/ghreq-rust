@@ -1,6 +1,10 @@
 use clap::Parser;
 use ghreq::{
-    ClientConfig, CommonError, Endpoint, HttpUrl, JsonResponse, Method, Request, ResponseParser,
+    client::ClientConfig,
+    errors::CommonError,
+    parser::{JsonResponse, ResponseParser},
+    request::Request,
+    Endpoint, HttpUrl, Method,
 };
 use serde::{Deserialize, Serialize};
 use std::process::ExitCode;

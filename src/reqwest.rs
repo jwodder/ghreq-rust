@@ -1,6 +1,10 @@
-use crate::{AsyncBackend, AsyncBackendResponse, HttpUrl, RequestParts};
+use crate::client::tokio::{AsyncBackend, AsyncBackendResponse, AsyncClient};
+use crate::client::RequestParts;
+use crate::HttpUrl;
 use futures_util::TryStreamExt;
 use tokio_util::io::{ReaderStream, StreamReader};
+
+pub type ReqwestClient = AsyncClient<reqwest::Client>;
 
 impl AsyncBackend for reqwest::Client {
     type Request = reqwest::RequestBuilder;

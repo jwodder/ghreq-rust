@@ -1,5 +1,8 @@
-use crate::{Backend, BackendResponse, HttpUrl, RequestParts};
+use crate::client::{Backend, BackendResponse, Client, RequestParts};
+use crate::HttpUrl;
 use http::header::{HeaderMap, HeaderName, HeaderValue};
+
+pub type UreqClient = Client<ureq::Agent>;
 
 impl Backend for ureq::Agent {
     type Request = ureq::Request;
