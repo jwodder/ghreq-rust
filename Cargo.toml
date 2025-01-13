@@ -7,9 +7,8 @@ description = "Magical and opinionated GitHub REST API client"
 authors = ["John Thorvald Wodder II <ghreq-rust@varonathe.org>"]
 repository = "https://github.com/jwodder/ghreq-rust"
 license = "MIT"
-keywords = []
-# See <https://crates.io/category_slugs> for a list of categories
-categories = []
+keywords = ["GitHub", "client", "REST API"]
+categories = ["api-bindings", "asynchronous"]
 exclude = ["/.*"]
 
 [dependencies]
