@@ -19,7 +19,7 @@ gh-token = { version = "0.1.7", optional = true }
 http = "1.2.0"
 mime = "0.3.17"
 parse_link_header = { version = "0.4.0", features = ["url"] }
-reqwest = { version = "0.12.12", optional = true, features = ["json", "stream"] }
+reqwest = { version = "0.12.12", optional = true, features = ["json"] }
 serde = "1.0.217"
 serde_json = "1.0.135"
 thiserror = "2.0.11"
@@ -34,7 +34,8 @@ rstest = { version = "0.24.0", default-features = false }
 [features]
 examples = ["dep:clap", "dep:gh-token", "serde/derive", "tokio?/macros", "tokio?/rt"]
 ureq = ["dep:ureq"]
-reqwest = ["dep:futures-util", "dep:reqwest", "tokio", "dep:tokio-util"]
+reqwest = ["dep:futures-util", "dep:reqwest", "reqwest/stream", "tokio", "dep:tokio-util"]
+reqwest-blocking = ["reqwest/blocking"]
 tokio = ["dep:tokio"]
 
 [[example]]

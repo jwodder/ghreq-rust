@@ -1,3 +1,6 @@
+#[cfg(feature = "reqwest-blocking")]
+pub mod blocking;
+
 use crate::{
     client::{
         tokio::{AsyncBackend, AsyncBackendResponse, AsyncClient},
