@@ -65,14 +65,16 @@ impl ClientConfig {
         self
     }
 
-    pub fn with_auth_token(
-        mut self,
-        token: &str,
-    ) -> Result<Self, http::header::InvalidHeaderValue> {
+    #[allow(clippy::result_large_err)]
+    pub fn with_auth_token(mut self, token: &str) -> Result<Self, Self> {
         let value = format!("Bearer {token}");
-        let value = value.parse::<HeaderValue>()?;
-        self.headers.insert(http::header::AUTHORIZATION, value);
-        Ok(self)
+        match value.parse::<HeaderValue>() {
+            Ok(value) => {
+                self.headers.insert(http::header::AUTHORIZATION, value);
+                Ok(self)
+            }
+            Err(_) => Err(self),
+        }
     }
 
     pub fn with_user_agent(mut self, value: HeaderValue) -> Self {

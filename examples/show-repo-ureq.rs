@@ -64,7 +64,17 @@ struct Arguments {
 
 fn main() -> ExitCode {
     let args = Arguments::parse();
-    let client = ClientConfig::new().with_ureq();
+    let mut cfg = ClientConfig::new();
+    if let Ok(token) = gh_token::get() {
+        cfg = match cfg.with_auth_token(&token) {
+            Ok(cfg2) => cfg2,
+            Err(cfg2) => {
+                eprintln!("Warning: invalid GitHub API auth token");
+                cfg2
+            }
+        }
+    }
+    let client = cfg.with_ureq();
     let req = ShowRepository {
         owner: args.owner,
         name: args.name,
