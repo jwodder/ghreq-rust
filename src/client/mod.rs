@@ -1,29 +1,18 @@
+pub mod tokio;
+use self::tokio::AsyncClient;
 use crate::{
-    AsyncBackend, AsyncBackendResponse, Backend, BackendResponse, Error, ErrorPayload,
-    ErrorResponseParser, HttpUrl, PreparedRequest, Request, RequestBody, RequestParts, Response,
-    ResponseParserExt, ResponseParts,
+    consts::{
+        API_VERSION_HEADER, DEFAULT_ACCEPT, DEFAULT_API_URL, DEFAULT_API_VERSION,
+        DEFAULT_USER_AGENT,
+    },
+    errors::{Error, ErrorPayload, ErrorResponseParser},
+    parser::ResponseParserExt,
+    request::{Request, RequestBody},
+    response::{Response, ResponseParts},
+    HttpUrl, Method,
 };
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 use std::time::Duration;
-
-pub static DEFAULT_ACCEPT: &str = "application/vnd.github+json";
-
-/// The name of the HTTP header used by the GitHub REST API to communicate the
-/// API version
-pub static API_VERSION_HEADER: &str = "X-GitHub-Api-Version";
-
-pub static DEFAULT_API_URL: &str = "https://api.github.com";
-
-pub static DEFAULT_API_VERSION: &str = "2022-11-28";
-
-pub static DEFAULT_USER_AGENT: &str = concat!(
-    env!("CARGO_PKG_NAME"),
-    "/",
-    env!("CARGO_PKG_VERSION"),
-    " (",
-    env!("CARGO_PKG_REPOSITORY"),
-    ")",
-);
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ClientConfig {
@@ -111,12 +100,12 @@ impl ClientConfig {
     }
 
     #[cfg(feature = "ureq")]
-    pub fn with_ureq(self) -> UreqClient {
+    pub fn with_ureq(self) -> crate::ureq::UreqClient {
         self.with_backend(ureq::AgentBuilder::new().build())
     }
 
     #[cfg(feature = "reqwest")]
-    pub fn with_reqwest(self) -> ReqwestClient {
+    pub fn with_reqwest(self) -> crate::reqwest::ReqwestClient {
         self.with_async_backend(reqwest::Client::default())
     }
 
@@ -163,7 +152,7 @@ impl ClientConfig {
     fn prepare_async_request<R: Request, BE>(
         &self,
         req: &R,
-    ) -> Result<PreparedRequest<impl tokio::io::AsyncRead + Send + 'static>, Error<BE, R::Error>>
+    ) -> Result<PreparedRequest<impl ::tokio::io::AsyncRead + Send + 'static>, Error<BE, R::Error>>
     {
         let (parts, body) = self.prepare_parts(req).into_parts();
         let body = match body.into_async_read() {
@@ -181,6 +170,76 @@ impl Default for ClientConfig {
     fn default() -> ClientConfig {
         ClientConfig::new()
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PreparedRequest<T> {
+    parts: RequestParts,
+    body: T,
+}
+
+impl<T> PreparedRequest<T> {
+    pub fn url(&self) -> &HttpUrl {
+        &self.parts.url
+    }
+
+    pub fn method(&self) -> Method {
+        self.parts.method
+    }
+
+    pub fn headers(&self) -> &HeaderMap {
+        &self.parts.headers
+    }
+
+    pub fn body_ref(&self) -> &T {
+        &self.body
+    }
+
+    pub fn body_mut(&mut self) -> &mut T {
+        &mut self.body
+    }
+
+    pub fn into_body(self) -> T {
+        self.body
+    }
+
+    pub fn into_parts(self) -> (RequestParts, T) {
+        (self.parts, self.body)
+    }
+
+    pub fn from_parts(parts: RequestParts, body: T) -> PreparedRequest<T> {
+        PreparedRequest { parts, body }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RequestParts {
+    pub url: HttpUrl,
+    pub method: Method,
+    pub headers: HeaderMap,
+    pub timeout: Option<Duration>,
+}
+
+pub trait Backend {
+    type Request;
+    type Response: BackendResponse;
+    type Error;
+
+    // TODO: Should this be fallible?
+    fn prepare_request(&self, r: RequestParts) -> Self::Request;
+
+    fn send<R: std::io::Read>(
+        &self,
+        r: Self::Request,
+        body: R,
+    ) -> Result<Self::Response, Self::Error>;
+}
+
+pub trait BackendResponse {
+    fn url(&self) -> HttpUrl;
+    fn status(&self) -> http::status::StatusCode;
+    fn headers(&self) -> HeaderMap;
+    fn body_reader(self) -> impl std::io::Read;
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -253,84 +312,3 @@ impl<B: Backend> Client<B> {
         }
     }
 }
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct AsyncClient<B> {
-    config: ClientConfig,
-    backend: B,
-}
-
-impl<B> AsyncClient<B> {
-    pub fn new(config: ClientConfig, backend: B) -> AsyncClient<B> {
-        AsyncClient { config, backend }
-    }
-
-    pub fn backend_ref(&self) -> &B {
-        &self.backend
-    }
-
-    pub fn backend_mut(&mut self) -> &mut B {
-        &mut self.backend
-    }
-}
-
-impl<B: AsyncBackend> AsyncClient<B> {
-    #[allow(clippy::future_not_send)]
-    pub async fn request<R: Request>(
-        &self,
-        req: R,
-    ) -> Result<R::Output, Error<B::Error, R::Error>> {
-        // TODO: Mutation delay
-        // TODO: Retrying
-        let (reqparts, reqbody) = self.config.prepare_async_request(&req)?.into_parts();
-        let initial_url = reqparts.url.clone();
-        let method = reqparts.method;
-        let backreq = self.backend.prepare_request(reqparts);
-        let resp = match self.backend.send(backreq, reqbody).await {
-            Ok(resp) => resp,
-            Err(e) => {
-                let payload = ErrorPayload::Send(e);
-                return Err(Error::new(initial_url, method, payload));
-            }
-        };
-        let parts = ResponseParts {
-            initial_url: initial_url.clone(),
-            method,
-            url: resp.url(),
-            status: resp.status(),
-            headers: resp.headers(),
-        };
-        let body = resp.body_reader();
-        let response = Response::from_parts(parts, body);
-        if response.status().is_client_error() || response.status().is_server_error() {
-            let parser = ErrorResponseParser::new();
-            let err_resp = parser.parse_async_response(response).await.map_err(|e| {
-                Error::new(
-                    initial_url.clone(),
-                    method,
-                    ErrorPayload::ParseResponse(e.convert_parse_error::<R::Error>()),
-                )
-            })?;
-            Err(Error::new(
-                initial_url,
-                method,
-                ErrorPayload::Status(err_resp),
-            ))
-        } else {
-            let parser = req.parser();
-            parser.parse_async_response(response).await.map_err(|e| {
-                Error::new(
-                    initial_url,
-                    method,
-                    ErrorPayload::ParseResponse(e.convert_parse_error()),
-                )
-            })
-        }
-    }
-}
-
-#[cfg(feature = "ureq")]
-pub type UreqClient = Client<ureq::Agent>;
-
-#[cfg(feature = "reqwest")]
-pub type ReqwestClient = AsyncClient<reqwest::Client>;

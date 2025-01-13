@@ -1,11 +1,14 @@
-use crate::{CommonError, HeaderMapExt, ParseResponseError, Response, ResponseParts};
+use crate::{
+    consts::READ_BLOCK_SIZE,
+    errors::{CommonError, ParseResponseError},
+    response::{Response, ResponseParts},
+    HeaderMapExt,
+};
 use bstr::ByteVec;
 use serde::de::DeserializeOwned;
 use std::io::Write;
 use std::marker::PhantomData;
 use tokio::io::AsyncReadExt;
-
-pub const READ_BLOCK_SIZE: usize = 2048;
 
 pub trait ResponseParser: Sized {
     type Output;

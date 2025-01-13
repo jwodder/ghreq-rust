@@ -1,4 +1,4 @@
-use crate::{CommonError, HttpUrl, Method, ResponseParser};
+use crate::{errors::CommonError, parser::ResponseParser, Endpoint, Method};
 use serde::Serialize;
 use std::fs::File;
 use std::io::Cursor;
@@ -30,24 +30,6 @@ pub trait Request {
     fn body(&self) -> Self::Body;
 
     fn parser(&self) -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>>;
-}
-
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub enum Endpoint {
-    Url(HttpUrl),
-    Path(Vec<String>),
-}
-
-impl From<HttpUrl> for Endpoint {
-    fn from(value: HttpUrl) -> Endpoint {
-        Endpoint::Url(value)
-    }
-}
-
-impl<S: Into<String>> FromIterator<S> for Endpoint {
-    fn from_iter<I: IntoIterator<Item = S>>(iter: I) -> Self {
-        Endpoint::Path(iter.into_iter().map(Into::into).collect())
-    }
 }
 
 pub trait RequestBody {
