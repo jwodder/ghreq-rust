@@ -25,7 +25,7 @@ impl Backend for ureq::Agent {
         req
     }
 
-    fn send<R: std::io::Read>(
+    fn send<R: std::io::Read + Send + 'static>(
         &self,
         r: Self::Request,
         body: R,

@@ -42,7 +42,7 @@ pub trait RequestBody {
         HeaderMap::new()
     }
 
-    fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error>;
+    fn into_read(self) -> Result<impl std::io::Read + Send + 'static, Self::Error>;
 }
 
 #[cfg(feature = "tokio")]
