@@ -43,7 +43,7 @@ pub trait AsyncBackendResponse {
     fn url(&self) -> HttpUrl;
     fn status(&self) -> http::status::StatusCode;
     fn headers(&self) -> http::header::HeaderMap;
-    fn body_reader(self) -> impl tokio::io::AsyncRead;
+    fn body_reader(self) -> impl tokio::io::AsyncRead + Send + 'static;
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]

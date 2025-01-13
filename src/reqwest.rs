@@ -41,7 +41,7 @@ impl AsyncBackendResponse for reqwest::Response {
         self.headers().clone()
     }
 
-    fn body_reader(self) -> impl tokio::io::AsyncRead {
+    fn body_reader(self) -> impl tokio::io::AsyncRead + Send + 'static {
         StreamReader::new(self.bytes_stream().map_err(std::io::Error::other))
     }
 }

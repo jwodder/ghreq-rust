@@ -3,6 +3,7 @@ use bstr::ByteVec;
 use serde::de::DeserializeOwned;
 use std::io::Write;
 use std::marker::PhantomData;
+use tokio::io::AsyncReadExt;
 
 pub const READ_BLOCK_SIZE: usize = 2048;
 
@@ -222,6 +223,26 @@ pub trait ResponseParserExt: ResponseParser {
         let mut buf = vec![0u8; READ_BLOCK_SIZE];
         loop {
             match body.read(&mut buf) {
+                Ok(0) => break,
+                Ok(n) => self.handle_bytes(&buf[..n]),
+                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
+                Err(e) => return Err(ParseResponseError::Read(e)),
+            }
+        }
+        self.end().map_err(ParseResponseError::Parse)
+    }
+
+    #[allow(async_fn_in_trait)]
+    async fn parse_async_response<R: tokio::io::AsyncRead + Send + 'static>(
+        mut self,
+        resp: Response<R>,
+    ) -> Result<Self::Output, ParseResponseError<Self::Error>> {
+        let (parts, body) = resp.into_parts();
+        self.handle_parts(&parts);
+        let mut buf = vec![0u8; READ_BLOCK_SIZE];
+        tokio::pin!(body);
+        loop {
+            match body.read(&mut buf).await {
                 Ok(0) => break,
                 Ok(n) => self.handle_bytes(&buf[..n]),
                 Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
