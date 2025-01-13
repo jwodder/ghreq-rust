@@ -28,11 +28,10 @@ impl<B> AsyncClient<B> {
     }
 }
 
-impl<B: AsyncBackend> AsyncClient<B> {
-    #[allow(clippy::future_not_send)]
+impl<B: AsyncBackend + Sync> AsyncClient<B> {
     pub async fn request<R>(&self, req: R) -> Result<R::Output, Error<B::Error, R::Error>>
     where
-        R: Request<Body: AsyncRequestBody<Error: Into<R::Error>>>,
+        R: Request<Body: AsyncRequestBody<Error: Into<R::Error>>> + Send,
     {
         // TODO: Mutation delay
         // TODO: Retrying
@@ -95,10 +94,10 @@ pub trait AsyncBackend {
         &self,
         r: Self::Request,
         body: R,
-    ) -> impl Future<Output = Result<Self::Response, Self::Error>>;
+    ) -> impl Future<Output = Result<Self::Response, Self::Error>> + Send + 'static;
 }
 
-pub trait AsyncBackendResponse {
+pub trait AsyncBackendResponse: Send {
     fn url(&self) -> HttpUrl;
     fn status(&self) -> http::status::StatusCode;
     fn headers(&self) -> http::header::HeaderMap;
