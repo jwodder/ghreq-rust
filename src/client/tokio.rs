@@ -97,6 +97,78 @@ pub trait AsyncBackend {
     ) -> impl Future<Output = Result<Self::Response, Self::Error>> + Send + 'static;
 }
 
+impl<T: AsyncBackend + Sync + ?Sized> AsyncBackend for &T {
+    type Request = T::Request;
+    type Response = T::Response;
+    type Error = T::Error;
+
+    fn prepare_request(&self, r: RequestParts) -> Self::Request {
+        (*self).prepare_request(r)
+    }
+
+    fn send<R: tokio::io::AsyncRead + Send + 'static>(
+        &self,
+        r: Self::Request,
+        body: R,
+    ) -> impl Future<Output = Result<Self::Response, Self::Error>> + Send + 'static {
+        (*self).send(r, body)
+    }
+}
+
+impl<T: AsyncBackend + ?Sized> AsyncBackend for &mut T {
+    type Request = T::Request;
+    type Response = T::Response;
+    type Error = T::Error;
+
+    fn prepare_request(&self, r: RequestParts) -> Self::Request {
+        (**self).prepare_request(r)
+    }
+
+    fn send<R: tokio::io::AsyncRead + Send + 'static>(
+        &self,
+        r: Self::Request,
+        body: R,
+    ) -> impl Future<Output = Result<Self::Response, Self::Error>> + Send + 'static {
+        (**self).send(r, body)
+    }
+}
+
+impl<T: AsyncBackend + ?Sized> AsyncBackend for std::sync::Arc<T> {
+    type Request = T::Request;
+    type Response = T::Response;
+    type Error = T::Error;
+
+    fn prepare_request(&self, r: RequestParts) -> Self::Request {
+        (**self).prepare_request(r)
+    }
+
+    fn send<R: tokio::io::AsyncRead + Send + 'static>(
+        &self,
+        r: Self::Request,
+        body: R,
+    ) -> impl Future<Output = Result<Self::Response, Self::Error>> + Send + 'static {
+        (**self).send(r, body)
+    }
+}
+
+impl<T: AsyncBackend + ?Sized> AsyncBackend for Box<T> {
+    type Request = T::Request;
+    type Response = T::Response;
+    type Error = T::Error;
+
+    fn prepare_request(&self, r: RequestParts) -> Self::Request {
+        (**self).prepare_request(r)
+    }
+
+    fn send<R: tokio::io::AsyncRead + Send + 'static>(
+        &self,
+        r: Self::Request,
+        body: R,
+    ) -> impl Future<Output = Result<Self::Response, Self::Error>> + Send + 'static {
+        (**self).send(r, body)
+    }
+}
+
 pub trait AsyncBackendResponse: Send {
     fn url(&self) -> HttpUrl;
     fn status(&self) -> http::status::StatusCode;

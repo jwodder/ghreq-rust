@@ -36,6 +36,150 @@ pub trait Request {
         -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>> + Send;
 }
 
+impl<T: Request + ?Sized> Request for &T {
+    type Output = T::Output;
+    type Error = T::Error;
+    type Body = T::Body;
+
+    fn endpoint(&self) -> Endpoint {
+        (*self).endpoint()
+    }
+
+    fn method(&self) -> Method {
+        (*self).method()
+    }
+
+    fn headers(&self) -> HeaderMap {
+        (*self).headers()
+    }
+
+    fn params(&self) -> Vec<(String, String)> {
+        (*self).params()
+    }
+
+    fn timeout(&self) -> Option<Duration> {
+        (*self).timeout()
+    }
+
+    fn body(&self) -> Self::Body {
+        (*self).body()
+    }
+
+    fn parser(
+        &self,
+    ) -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>> + Send {
+        (*self).parser()
+    }
+}
+
+impl<T: Request + ?Sized> Request for &mut T {
+    type Output = T::Output;
+    type Error = T::Error;
+    type Body = T::Body;
+
+    fn endpoint(&self) -> Endpoint {
+        (**self).endpoint()
+    }
+
+    fn method(&self) -> Method {
+        (**self).method()
+    }
+
+    fn headers(&self) -> HeaderMap {
+        (**self).headers()
+    }
+
+    fn params(&self) -> Vec<(String, String)> {
+        (**self).params()
+    }
+
+    fn timeout(&self) -> Option<Duration> {
+        (**self).timeout()
+    }
+
+    fn body(&self) -> Self::Body {
+        (**self).body()
+    }
+
+    fn parser(
+        &self,
+    ) -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>> + Send {
+        (**self).parser()
+    }
+}
+
+impl<T: Request + ?Sized> Request for std::sync::Arc<T> {
+    type Output = T::Output;
+    type Error = T::Error;
+    type Body = T::Body;
+
+    fn endpoint(&self) -> Endpoint {
+        (**self).endpoint()
+    }
+
+    fn method(&self) -> Method {
+        (**self).method()
+    }
+
+    fn headers(&self) -> HeaderMap {
+        (**self).headers()
+    }
+
+    fn params(&self) -> Vec<(String, String)> {
+        (**self).params()
+    }
+
+    fn timeout(&self) -> Option<Duration> {
+        (**self).timeout()
+    }
+
+    fn body(&self) -> Self::Body {
+        (**self).body()
+    }
+
+    fn parser(
+        &self,
+    ) -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>> + Send {
+        (**self).parser()
+    }
+}
+
+impl<T: Request + ?Sized> Request for Box<T> {
+    type Output = T::Output;
+    type Error = T::Error;
+    type Body = T::Body;
+
+    fn endpoint(&self) -> Endpoint {
+        (**self).endpoint()
+    }
+
+    fn method(&self) -> Method {
+        (**self).method()
+    }
+
+    fn headers(&self) -> HeaderMap {
+        (**self).headers()
+    }
+
+    fn params(&self) -> Vec<(String, String)> {
+        (**self).params()
+    }
+
+    fn timeout(&self) -> Option<Duration> {
+        (**self).timeout()
+    }
+
+    fn body(&self) -> Self::Body {
+        (**self).body()
+    }
+
+    fn parser(
+        &self,
+    ) -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>> + Send {
+        (**self).parser()
+    }
+}
+
 pub trait RequestBody {
     type Error;
 
