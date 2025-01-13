@@ -5,6 +5,7 @@ pub mod errors;
 mod header_ext;
 mod http_url;
 mod method;
+pub mod pagination;
 pub mod parser;
 pub mod request;
 pub mod response;
