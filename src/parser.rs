@@ -8,6 +8,7 @@ use bstr::ByteVec;
 use serde::de::DeserializeOwned;
 use std::io::Write;
 use std::marker::PhantomData;
+#[cfg(feature = "tokio")]
 use tokio::io::AsyncReadExt;
 
 pub trait ResponseParser: Sized {
@@ -236,6 +237,7 @@ pub trait ResponseParserExt: ResponseParser {
     }
 
     #[allow(async_fn_in_trait)]
+    #[cfg(feature = "tokio")]
     async fn parse_async_response<R: tokio::io::AsyncRead + Send + 'static>(
         mut self,
         resp: Response<R>,

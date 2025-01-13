@@ -2,7 +2,7 @@ use super::{ClientConfig, RequestParts};
 use crate::{
     errors::{Error, ErrorPayload, ErrorResponseParser},
     parser::ResponseParserExt,
-    request::Request,
+    request::{AsyncRequestBody, Request},
     response::{Response, ResponseParts},
     HttpUrl,
 };
@@ -30,10 +30,10 @@ impl<B> AsyncClient<B> {
 
 impl<B: AsyncBackend> AsyncClient<B> {
     #[allow(clippy::future_not_send)]
-    pub async fn request<R: Request>(
-        &self,
-        req: R,
-    ) -> Result<R::Output, Error<B::Error, R::Error>> {
+    pub async fn request<R>(&self, req: R) -> Result<R::Output, Error<B::Error, R::Error>>
+    where
+        R: Request<Body: AsyncRequestBody<Error: Into<R::Error>>>,
+    {
         // TODO: Mutation delay
         // TODO: Retrying
         let (reqparts, reqbody) = self.config.prepare_async_request(&req)?.into_parts();

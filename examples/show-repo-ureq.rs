@@ -1,3 +1,9 @@
+//! Run with:
+//!
+//! ```
+//! cargo run --example show-repo-ureq --features examples,ureq -- <args>
+//! ```
+
 use clap::Parser;
 use ghreq::{
     client::ClientConfig,

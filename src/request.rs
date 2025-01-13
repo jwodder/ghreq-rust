@@ -1,4 +1,5 @@
-use crate::{errors::CommonError, parser::ResponseParser, Endpoint, Method};
+use crate::{errors::CommonError, parser::ResponseParser, Endpoint, HeaderMapExt, Method};
+use http::header::HeaderMap;
 use serde::Serialize;
 use std::fs::File;
 use std::io::Cursor;
@@ -8,14 +9,16 @@ use std::time::Duration;
 pub trait Request {
     type Output;
     type Error: From<CommonError>;
-    type Body: RequestBody<Error: Into<Self::Error>>;
+    // The rest of the library requires Body to implement either RequestBody or
+    // AsyncRequestBody, and the Error type must impl Into<Request::Error>.
+    type Body;
 
     fn endpoint(&self) -> Endpoint;
 
     fn method(&self) -> Method;
 
-    fn headers(&self) -> http::header::HeaderMap {
-        http::header::HeaderMap::new()
+    fn headers(&self) -> HeaderMap {
+        HeaderMap::new()
     }
 
     fn params(&self) -> Vec<(String, String)> {
@@ -35,11 +38,20 @@ pub trait Request {
 pub trait RequestBody {
     type Error;
 
-    fn headers(&self) -> http::header::HeaderMap {
-        http::header::HeaderMap::new()
+    fn headers(&self) -> HeaderMap {
+        HeaderMap::new()
     }
 
     fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error>;
+}
+
+#[cfg(feature = "tokio")]
+pub trait AsyncRequestBody {
+    type Error;
+
+    fn headers(&self) -> HeaderMap {
+        HeaderMap::new()
+    }
 
     // TODO: Should this method be async?
     fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error>;
@@ -48,17 +60,25 @@ pub trait RequestBody {
 impl RequestBody for () {
     type Error = CommonError;
 
-    fn headers(&self) -> http::header::HeaderMap {
-        let mut headers = http::header::HeaderMap::new();
-        headers.insert(
-            http::header::CONTENT_LENGTH,
-            "0".parse().expect(r#""0" should be a valid HeaderValue"#),
-        );
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.set_content_length(0);
         headers
     }
 
     fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         Ok(std::io::empty())
+    }
+}
+
+#[cfg(feature = "tokio")]
+impl AsyncRequestBody for () {
+    type Error = CommonError;
+
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.set_content_length(0);
+        headers
     }
 
     fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
@@ -69,20 +89,29 @@ impl RequestBody for () {
 impl RequestBody for Vec<u8> {
     type Error = CommonError;
 
-    fn headers(&self) -> http::header::HeaderMap {
-        let mut headers = http::header::HeaderMap::new();
-        headers.insert(
-            http::header::CONTENT_LENGTH,
-            self.len()
-                .to_string()
-                .parse()
-                .expect("integer string should be a valid HeaderValue"),
-        );
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        if let Ok(sz) = self.len().try_into() {
+            headers.set_content_length(sz);
+        }
         headers
     }
 
     fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         Ok(Cursor::new(self))
+    }
+}
+
+#[cfg(feature = "tokio")]
+impl AsyncRequestBody for Vec<u8> {
+    type Error = CommonError;
+
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        if let Ok(sz) = self.len().try_into() {
+            headers.set_content_length(sz);
+        }
+        headers
     }
 
     fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
@@ -93,20 +122,29 @@ impl RequestBody for Vec<u8> {
 impl RequestBody for String {
     type Error = CommonError;
 
-    fn headers(&self) -> http::header::HeaderMap {
-        let mut headers = http::header::HeaderMap::new();
-        headers.insert(
-            http::header::CONTENT_LENGTH,
-            self.len()
-                .to_string()
-                .parse()
-                .expect("integer string should be a valid HeaderValue"),
-        );
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        if let Ok(sz) = self.len().try_into() {
+            headers.set_content_length(sz);
+        }
         headers
     }
 
     fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         Ok(Cursor::new(self.into_bytes()))
+    }
+}
+
+#[cfg(feature = "tokio")]
+impl AsyncRequestBody for String {
+    type Error = CommonError;
+
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        if let Ok(sz) = self.len().try_into() {
+            headers.set_content_length(sz);
+        }
+        headers
     }
 
     fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
@@ -126,8 +164,8 @@ impl<T> JsonBody<T> {
 impl<T: Serialize> RequestBody for JsonBody<T> {
     type Error = CommonError;
 
-    fn headers(&self) -> http::header::HeaderMap {
-        let mut headers = http::header::HeaderMap::new();
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
         headers.insert(
             http::header::CONTENT_TYPE,
             "application/json"
@@ -140,6 +178,22 @@ impl<T: Serialize> RequestBody for JsonBody<T> {
     fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         Ok(Cursor::new(serde_json::to_vec(&self.0)?))
     }
+}
+
+#[cfg(feature = "tokio")]
+impl<T: Serialize> AsyncRequestBody for JsonBody<T> {
+    type Error = CommonError;
+
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            http::header::CONTENT_TYPE,
+            "application/json"
+                .parse()
+                .expect(r#""application/json" should be a valid HeaderValue"#),
+        );
+        headers
+    }
 
     fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
         Ok(Cursor::new(serde_json::to_vec(&self.0)?))
@@ -149,22 +203,29 @@ impl<T: Serialize> RequestBody for JsonBody<T> {
 impl RequestBody for PathBuf {
     type Error = CommonError;
 
-    fn headers(&self) -> http::header::HeaderMap {
-        let mut headers = http::header::HeaderMap::new();
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
         if let Ok(md) = std::fs::metadata(self) {
-            headers.insert(
-                http::header::CONTENT_LENGTH,
-                md.len()
-                    .to_string()
-                    .parse()
-                    .expect("integer string should be a valid HeaderValue"),
-            );
+            headers.set_content_length(md.len());
         }
         headers
     }
 
     fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         File::open(self).map_err(Into::into)
+    }
+}
+
+#[cfg(feature = "tokio")]
+impl AsyncRequestBody for PathBuf {
+    type Error = CommonError;
+
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        if let Ok(md) = std::fs::metadata(self) {
+            headers.set_content_length(md.len());
+        }
+        headers
     }
 
     fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
@@ -177,22 +238,29 @@ impl RequestBody for PathBuf {
 impl RequestBody for File {
     type Error = CommonError;
 
-    fn headers(&self) -> http::header::HeaderMap {
-        let mut headers = http::header::HeaderMap::new();
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
         if let Ok(md) = self.metadata() {
-            headers.insert(
-                http::header::CONTENT_LENGTH,
-                md.len()
-                    .to_string()
-                    .parse()
-                    .expect("integer string should be a valid HeaderValue"),
-            );
+            headers.set_content_length(md.len());
         }
         headers
     }
 
     fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
         Ok(self)
+    }
+}
+
+#[cfg(feature = "tokio")]
+impl AsyncRequestBody for File {
+    type Error = CommonError;
+
+    fn headers(&self) -> HeaderMap {
+        let mut headers = HeaderMap::new();
+        if let Ok(md) = self.metadata() {
+            headers.set_content_length(md.len());
+        }
+        headers
     }
 
     fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {

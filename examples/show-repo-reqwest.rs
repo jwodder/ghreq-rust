@@ -1,3 +1,8 @@
+//! Run with:
+//!
+//! ```
+//! cargo run --example show-repo-reqwest --features examples,reqwest -- <args>
+//! ```
 use clap::Parser;
 use ghreq::{
     client::ClientConfig,
