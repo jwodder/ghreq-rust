@@ -146,21 +146,12 @@ impl<T: Serialize> RequestBody for JsonBody<T> {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
-pub struct FilePathBody(PathBuf); // TODO: Rethink name
-
-impl FilePathBody {
-    pub fn new<S: Into<PathBuf>>(path: S) -> FilePathBody {
-        FilePathBody(path.into())
-    }
-}
-
-impl RequestBody for FilePathBody {
+impl RequestBody for PathBuf {
     type Error = CommonError;
 
     fn headers(&self) -> http::header::HeaderMap {
         let mut headers = http::header::HeaderMap::new();
-        if let Ok(md) = std::fs::metadata(&self.0) {
+        if let Ok(md) = std::fs::metadata(self) {
             headers.insert(
                 http::header::CONTENT_LENGTH,
                 md.len()
@@ -173,12 +164,12 @@ impl RequestBody for FilePathBody {
     }
 
     fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error> {
-        File::open(self.0).map_err(Into::into)
+        File::open(self).map_err(Into::into)
     }
 
     fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
         // ASYNC: tokio::fs::File::open(self.0).await.map_err(Into::into)
-        let fp = File::open(self.0)?;
+        let fp = File::open(self)?;
         Ok(tokio::fs::File::from_std(fp))
     }
 }
