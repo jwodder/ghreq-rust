@@ -256,8 +256,6 @@ pub trait ResponseParserExt: ResponseParser {
         }
         self.end().map_err(ParseResponseError::Parse)
     }
-
-    // TODO: map(), try_map()
 }
 
 impl<R: ResponseParser> ResponseParserExt for R {}

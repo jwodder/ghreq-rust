@@ -33,8 +33,6 @@ impl<B: AsyncBackend + Sync> AsyncClient<B> {
     where
         R: Request<Body: AsyncRequestBody<Error: Into<R::Error>>> + Send,
     {
-        // TODO: Mutation delay
-        // TODO: Retrying
         let (reqparts, reqbody) = self.config.prepare_async_request(&req)?.into_parts();
         let initial_url = reqparts.url.clone();
         let method = reqparts.method;
@@ -87,7 +85,6 @@ pub trait AsyncBackend {
     type Response: AsyncBackendResponse;
     type Error;
 
-    // TODO: Should this be fallible?
     fn prepare_request(&self, r: RequestParts) -> Self::Request;
 
     fn send<R: tokio::io::AsyncRead + Send + 'static>(

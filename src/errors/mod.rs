@@ -57,11 +57,6 @@ impl<BackendError, E> Error<BackendError, E> {
     pub fn pretty_text(&self) -> Option<Cow<'_, str>> {
         self.payload.pretty_text()
     }
-
-    // TODO: Methods to consider adding:
-    // - kind(&self) -> PayloadKind // C-style enum with variants matching ErrorPayload
-    // - is_send_error(&self) -> bool // etc.
-    // - into_send_error(self) -> Option<ClientError> // etc.
 }
 
 impl<BackendError: StdError + 'static, E: StdError + 'static> fmt::Display

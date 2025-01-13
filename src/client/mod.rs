@@ -25,7 +25,6 @@ pub struct ClientConfig {
     base_url: HttpUrl,
     headers: HeaderMap,
     timeout: Option<Duration>,
-    // TODO: mutation delay and retry config
 }
 
 impl ClientConfig {
@@ -260,7 +259,6 @@ pub trait Backend {
     type Response: BackendResponse;
     type Error;
 
-    // TODO: Should this be fallible?
     fn prepare_request(&self, r: RequestParts) -> Self::Request;
 
     fn send<R: std::io::Read>(
@@ -374,8 +372,6 @@ impl<B: Backend> Client<B> {
     where
         R: Request<Body: RequestBody<Error: Into<R::Error>>>,
     {
-        // TODO: Mutation delay
-        // TODO: Retrying
         let (reqparts, reqbody) = self.config.prepare_request(&req)?.into_parts();
         let initial_url = reqparts.url.clone();
         let method = reqparts.method;

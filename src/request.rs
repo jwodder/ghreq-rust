@@ -22,7 +22,6 @@ pub trait Request {
     }
 
     fn params(&self) -> Vec<(String, String)> {
-        // TODO: Rethink return type
         Vec::new()
     }
 
@@ -198,7 +197,6 @@ pub trait AsyncRequestBody {
         HeaderMap::new()
     }
 
-    // TODO: Should this method be async?
     fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error>;
 }
 
