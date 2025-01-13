@@ -60,7 +60,7 @@ pub trait RequestBody {
     fn into_read(self) -> Result<impl std::io::Read + 'static, Self::Error>;
 
     // TODO: Should this method be async?
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error>;
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error>;
 }
 
 impl RequestBody for () {
@@ -79,7 +79,7 @@ impl RequestBody for () {
         Ok(std::io::empty())
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
         Ok(tokio::io::empty())
     }
 }
@@ -103,7 +103,7 @@ impl RequestBody for Vec<u8> {
         Ok(Cursor::new(self))
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
         Ok(Cursor::new(self))
     }
 }
@@ -127,7 +127,7 @@ impl RequestBody for String {
         Ok(Cursor::new(self.into_bytes()))
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
         Ok(Cursor::new(self.into_bytes()))
     }
 }
@@ -159,7 +159,7 @@ impl<T: Serialize> RequestBody for JsonBody<T> {
         Ok(Cursor::new(serde_json::to_vec(&self.0)?))
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
         Ok(Cursor::new(serde_json::to_vec(&self.0)?))
     }
 }
@@ -194,7 +194,7 @@ impl RequestBody for FilePathBody {
         File::open(self.0).map_err(Into::into)
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
         // ASYNC: tokio::fs::File::open(self.0).await.map_err(Into::into)
         let fp = File::open(self.0)?;
         Ok(tokio::fs::File::from_std(fp))
@@ -222,7 +222,7 @@ impl RequestBody for File {
         Ok(self)
     }
 
-    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + 'static, Self::Error> {
+    fn into_async_read(self) -> Result<impl tokio::io::AsyncRead + Send + 'static, Self::Error> {
         Ok(tokio::fs::File::from_std(self))
     }
 }

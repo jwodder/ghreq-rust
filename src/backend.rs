@@ -26,13 +26,13 @@ pub trait BackendResponse {
 
 pub trait AsyncBackend {
     type Request;
-    type Response: BackendResponse;
+    type Response: AsyncBackendResponse;
     type Error;
 
     // TODO: Should this be fallible?
     fn prepare_request(&self, r: RequestParts) -> Self::Request;
 
-    fn send<R: std::io::Read>(
+    fn send<R: tokio::io::AsyncRead + Send + 'static>(
         &self,
         r: Self::Request,
         body: R,

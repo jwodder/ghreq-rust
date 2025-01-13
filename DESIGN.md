@@ -238,4 +238,6 @@ Other
 - PROBLEM: In order to support retrying, there will need to be a way to
   determine whether a given body is retryiable
 
+- Rename `ResponseParser` to `FromResponse`?
+
 - cf. <https://github.com/snok/container-retention-policy/blob/b439c10ae57ac70bd2301813dc2d0f708dc78f31/src/client/builder.rs#L70> regarding rate limiting

@@ -19,5 +19,8 @@ pub use crate::response::*;
 pub use http::header;
 pub use http::status;
 
+#[cfg(feature = "reqwest")]
+mod reqwest;
+
 #[cfg(feature = "ureq")]
 mod ureq;

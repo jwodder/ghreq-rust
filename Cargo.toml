@@ -15,14 +15,17 @@ exclude = ["/.*"]
 [dependencies]
 bstr = "1.11.3"
 clap = { version = "4.5.26", optional = true, features = ["derive"] }
+futures-util = { version = "0.3.31", default-features = false, features = ["std"], optional = true }
 gh-token = { version = "0.1.7", optional = true }
 http = "1.2.0"
 mime = "0.3.17"
 parse_link_header = { version = "0.4.0", features = ["url"] }
+reqwest = { version = "0.12.12", optional = true, features = ["json", "stream"] }
 serde = "1.0.217"
 serde_json = "1.0.135"
 thiserror = "2.0.11"
 tokio = { version = "1.43.0", "features" = ["fs", "io-util"] }
+tokio-util = { version = "0.7.13", features = ["io"], optional = true }
 ureq = { version = "2.12.1", optional = true, features = ["json"] }
 url = { version = "2.5.4", features = ["serde"] }
 
@@ -32,6 +35,7 @@ rstest = { version = "0.24.0", default-features = false }
 [features]
 examples = ["dep:clap", "dep:gh-token", "serde/derive"]
 ureq = ["dep:ureq"]
+reqwest = ["dep:futures-util", "dep:reqwest", "dep:tokio-util"]
 
 [[example]]
 name = "show-repo-ureq"

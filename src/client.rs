@@ -116,6 +116,11 @@ impl ClientConfig {
         self.with_backend(ureq::AgentBuilder::new().build())
     }
 
+    #[cfg(feature = "reqwest")]
+    pub fn with_reqwest(self) -> ReqwestClient {
+        self.with_backend(reqwest::Client::default())
+    }
+
     // TODO: with_reqwest(self) — use default backend values
 
     // PRIVATE
@@ -232,3 +237,6 @@ impl<B: Backend> Client<B> {
 
 #[cfg(feature = "ureq")]
 pub type UreqClient = Client<ureq::Agent>;
+
+#[cfg(feature = "reqwest")]
+pub type ReqwestClient = Client<reqwest::Client>;
