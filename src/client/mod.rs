@@ -60,35 +60,44 @@ impl ClientConfig {
         }
     }
 
-    pub fn set_base_url(&mut self, url: HttpUrl) {
+    pub fn with_base_url(mut self, url: HttpUrl) -> Self {
         self.base_url = url;
+        self
     }
 
-    pub fn set_auth_token(&mut self, token: &str) -> Result<(), http::header::InvalidHeaderValue> {
+    pub fn with_auth_token(
+        mut self,
+        token: &str,
+    ) -> Result<Self, http::header::InvalidHeaderValue> {
         let value = format!("Bearer {token}");
         let value = value.parse::<HeaderValue>()?;
         self.headers.insert(http::header::AUTHORIZATION, value);
-        Ok(())
+        Ok(self)
     }
 
-    pub fn set_user_agent(&mut self, value: HeaderValue) {
+    pub fn with_user_agent(mut self, value: HeaderValue) -> Self {
         self.headers.insert(http::header::USER_AGENT, value);
+        self
     }
 
-    pub fn set_accept(&mut self, value: HeaderValue) {
+    pub fn with_accept(mut self, value: HeaderValue) -> Self {
         self.headers.insert(http::header::ACCEPT, value);
+        self
     }
 
-    pub fn set_api_version(&mut self, value: HeaderValue) {
+    pub fn with_api_version(mut self, value: HeaderValue) -> Self {
         self.headers.insert(API_VERSION_HEADER, value);
+        self
     }
 
-    pub fn set_header(&mut self, name: HeaderName, value: HeaderValue) {
+    pub fn with_header(mut self, name: HeaderName, value: HeaderValue) -> Self {
         self.headers.insert(name, value);
+        self
     }
 
-    pub fn set_timeout(&mut self, timeout: Duration) {
+    pub fn set_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
+        self
     }
 
     pub fn with_backend<B>(self, backend: B) -> Client<B> {
