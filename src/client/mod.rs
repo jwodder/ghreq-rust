@@ -270,6 +270,78 @@ pub trait Backend {
     ) -> Result<Self::Response, Self::Error>;
 }
 
+impl<T: Backend + ?Sized> Backend for &T {
+    type Request = T::Request;
+    type Response = T::Response;
+    type Error = T::Error;
+
+    fn prepare_request(&self, r: RequestParts) -> Self::Request {
+        (*self).prepare_request(r)
+    }
+
+    fn send<R: std::io::Read>(
+        &self,
+        r: Self::Request,
+        body: R,
+    ) -> Result<Self::Response, Self::Error> {
+        (*self).send(r, body)
+    }
+}
+
+impl<T: Backend + ?Sized> Backend for &mut T {
+    type Request = T::Request;
+    type Response = T::Response;
+    type Error = T::Error;
+
+    fn prepare_request(&self, r: RequestParts) -> Self::Request {
+        (**self).prepare_request(r)
+    }
+
+    fn send<R: std::io::Read>(
+        &self,
+        r: Self::Request,
+        body: R,
+    ) -> Result<Self::Response, Self::Error> {
+        (**self).send(r, body)
+    }
+}
+
+impl<T: Backend + ?Sized> Backend for std::sync::Arc<T> {
+    type Request = T::Request;
+    type Response = T::Response;
+    type Error = T::Error;
+
+    fn prepare_request(&self, r: RequestParts) -> Self::Request {
+        (**self).prepare_request(r)
+    }
+
+    fn send<R: std::io::Read>(
+        &self,
+        r: Self::Request,
+        body: R,
+    ) -> Result<Self::Response, Self::Error> {
+        (**self).send(r, body)
+    }
+}
+
+impl<T: Backend + ?Sized> Backend for Box<T> {
+    type Request = T::Request;
+    type Response = T::Response;
+    type Error = T::Error;
+
+    fn prepare_request(&self, r: RequestParts) -> Self::Request {
+        (**self).prepare_request(r)
+    }
+
+    fn send<R: std::io::Read>(
+        &self,
+        r: Self::Request,
+        body: R,
+    ) -> Result<Self::Response, Self::Error> {
+        (**self).send(r, body)
+    }
+}
+
 pub trait BackendResponse {
     fn url(&self) -> HttpUrl;
     fn status(&self) -> http::status::StatusCode;
