@@ -23,7 +23,7 @@ reqwest = { version = "0.12.12", optional = true, features = ["json", "stream"] 
 serde = "1.0.217"
 serde_json = "1.0.135"
 thiserror = "2.0.11"
-tokio = { version = "1.43.0", "features" = ["fs", "io-util"] }
+tokio = { version = "1.43.0", "features" = ["fs", "io-util"], optional = true }
 tokio-util = { version = "0.7.13", features = ["io"], optional = true }
 ureq = { version = "2.12.1", optional = true, features = ["json"] }
 url = { version = "2.5.4", features = ["serde"] }
@@ -34,7 +34,8 @@ rstest = { version = "0.24.0", default-features = false }
 [features]
 examples = ["dep:clap", "dep:gh-token", "serde/derive", "tokio/macros", "tokio/rt"]
 ureq = ["dep:ureq"]
-reqwest = ["dep:futures-util", "dep:reqwest", "dep:tokio-util"]
+reqwest = ["dep:futures-util", "dep:reqwest", "tokio", "dep:tokio-util"]
+tokio = ["dep:tokio"]
 
 [[example]]
 name = "show-repo-reqwest"

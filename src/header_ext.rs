@@ -4,6 +4,7 @@ use mime::{Mime, JSON};
 pub trait HeaderMapExt {
     fn content_type_is_json(&self) -> bool;
     fn content_length(&self) -> Option<u64>;
+    fn set_content_length(&mut self, length: u64);
     fn pagination_links(&self) -> PaginationLinks;
 }
 
@@ -21,6 +22,16 @@ impl HeaderMapExt for http::header::HeaderMap {
         self.get(http::header::CONTENT_LENGTH)
             .and_then(|v| v.to_str().ok())
             .and_then(|v| v.parse::<u64>().ok())
+    }
+
+    fn set_content_length(&mut self, length: u64) {
+        self.insert(
+            http::header::CONTENT_LENGTH,
+            length
+                .to_string()
+                .parse()
+                .expect("integer string should be a valid HeaderValue"),
+        );
     }
 
     fn pagination_links(&self) -> PaginationLinks {

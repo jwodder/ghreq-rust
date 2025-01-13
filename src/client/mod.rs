@@ -1,5 +1,6 @@
+#[cfg(feature = "tokio")]
 pub mod tokio;
-use self::tokio::AsyncClient;
+
 use crate::{
     consts::{
         API_VERSION_HEADER, DEFAULT_ACCEPT, DEFAULT_API_URL, DEFAULT_API_VERSION,
@@ -13,6 +14,11 @@ use crate::{
 };
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 use std::time::Duration;
+
+#[cfg(feature = "tokio")]
+use self::tokio::AsyncClient;
+#[cfg(feature = "tokio")]
+use crate::request::AsyncRequestBody;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ClientConfig {
@@ -92,6 +98,7 @@ impl ClientConfig {
         }
     }
 
+    #[cfg(feature = "tokio")]
     pub fn with_async_backend<B>(self, backend: B) -> AsyncClient<B> {
         AsyncClient {
             config: self,
@@ -110,7 +117,13 @@ impl ClientConfig {
     }
 
     // PRIVATE
-    fn prepare_parts<R: Request>(&self, req: &R) -> PreparedRequest<R::Body> {
+    fn prepare_request<R, BE>(
+        &self,
+        req: &R,
+    ) -> Result<PreparedRequest<impl std::io::Read + 'static>, Error<BE, R::Error>>
+    where
+        R: Request<Body: RequestBody<Error: Into<R::Error>>>,
+    {
         let mut url = self.base_url.join_endpoint(req.endpoint());
         for (name, value) in req.params() {
             url.append_query_param(&name, &value);
@@ -129,15 +142,6 @@ impl ClientConfig {
             headers,
             timeout,
         };
-        PreparedRequest::from_parts(parts, body)
-    }
-
-    // PRIVATE
-    fn prepare_request<R: Request, BE>(
-        &self,
-        req: &R,
-    ) -> Result<PreparedRequest<impl std::io::Read + 'static>, Error<BE, R::Error>> {
-        let (parts, body) = self.prepare_parts(req).into_parts();
         let body = match body.into_read() {
             Ok(body) => body,
             Err(e) => {
@@ -149,12 +153,32 @@ impl ClientConfig {
     }
 
     // PRIVATE
-    fn prepare_async_request<R: Request, BE>(
+    #[cfg(feature = "tokio")]
+    fn prepare_async_request<R, BE>(
         &self,
         req: &R,
     ) -> Result<PreparedRequest<impl ::tokio::io::AsyncRead + Send + 'static>, Error<BE, R::Error>>
+    where
+        R: Request<Body: AsyncRequestBody<Error: Into<<R as Request>::Error>>>,
     {
-        let (parts, body) = self.prepare_parts(req).into_parts();
+        let mut url = self.base_url.join_endpoint(req.endpoint());
+        for (name, value) in req.params() {
+            url.append_query_param(&name, &value);
+        }
+        let method = req.method();
+        let timeout = req.timeout().or(self.timeout);
+        let body = req.body();
+        // Set the body headers first so that the Request can override them if
+        // it wants
+        let mut headers = self.headers.clone();
+        headers.extend(body.headers());
+        headers.extend(req.headers());
+        let parts = RequestParts {
+            url: url.clone(),
+            method,
+            headers,
+            timeout,
+        };
         let body = match body.into_async_read() {
             Ok(body) => body,
             Err(e) => {
@@ -263,7 +287,10 @@ impl<B> Client<B> {
 }
 
 impl<B: Backend> Client<B> {
-    pub fn request<R: Request>(&self, req: R) -> Result<R::Output, Error<B::Error, R::Error>> {
+    pub fn request<R>(&self, req: R) -> Result<R::Output, Error<B::Error, R::Error>>
+    where
+        R: Request<Body: RequestBody<Error: Into<R::Error>>>,
+    {
         // TODO: Mutation delay
         // TODO: Retrying
         let (reqparts, reqbody) = self.config.prepare_request(&req)?.into_parts();
