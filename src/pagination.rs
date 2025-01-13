@@ -1,12 +1,17 @@
+use crate::{
+    errors::CommonError, parser::ResponseParser, response::ResponseParts, util::get_page_number,
+    HeaderMapExt, HttpUrl,
+};
 use serde::{de::DeserializeOwned, Deserialize};
+use std::marker::PhantomData;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
 #[serde(bound = "T: DeserializeOwned", try_from = "RawPage<T>")]
 pub struct Page<T> {
     pub items: Vec<T>,
-    pub total: Option<u64>,
-    pub incomplete: Option<bool>,
+    pub total_count: Option<u64>,
+    pub incomplete_results: Option<bool>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -23,15 +28,15 @@ impl<T: DeserializeOwned> TryFrom<RawPage<T>> for Page<T> {
         match value {
             RawPage::Array(items) => Ok(Page {
                 items,
-                total: None,
-                incomplete: None,
+                total_count: None,
+                incomplete_results: None,
             }),
             RawPage::Map(map) => {
-                let total = map
+                let total_count = map
                     .get("total_count")
                     .and_then(|v| v.as_number())
                     .and_then(serde_json::Number::as_u64);
-                let incomplete = map
+                let incomplete_results = map
                     .get("incomplete_results")
                     .and_then(serde_json::Value::as_bool);
                 let mut lists = map
@@ -45,8 +50,8 @@ impl<T: DeserializeOwned> TryFrom<RawPage<T>> for Page<T> {
                     match serde_json::from_value::<Vec<T>>(lst) {
                         Ok(items) => Ok(Page {
                             items,
-                            total,
-                            incomplete,
+                            total_count,
+                            incomplete_results,
                         }),
                         Err(e) => Err(ParsePageError::DeserList(e)),
                     }
@@ -67,9 +72,83 @@ enum ParsePageError {
     DeserList(#[source] serde_json::Error),
 }
 
-// PaginationResponse
-// PaginationResponseParser
-// PaginationRequest
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct PaginationInfo {
+    pub current_page: u64,
+    pub last_page: Option<u64>,
+    pub total_count: Option<u64>,
+    pub incomplete_results: Option<bool>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PageResponse<T> {
+    pub next_url: Option<HttpUrl>,
+    pub items: Vec<T>,
+    pub info: PaginationInfo,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PageParser<T> {
+    next_url: Option<HttpUrl>,
+    info: Option<PaginationInfo>,
+    buf: Vec<u8>,
+    _items: PhantomData<T>,
+}
+
+impl<T> PageParser<T> {
+    pub fn new() -> PageParser<T> {
+        PageParser {
+            next_url: None,
+            info: None,
+            buf: Vec::new(),
+            _items: PhantomData,
+        }
+    }
+}
+
+impl<T> Default for PageParser<T> {
+    fn default() -> PageParser<T> {
+        PageParser::new()
+    }
+}
+
+impl<T: DeserializeOwned> ResponseParser for PageParser<T> {
+    type Output = PageResponse<T>;
+    type Error = CommonError;
+
+    fn handle_parts(&mut self, parts: &ResponseParts) {
+        let links = parts.headers().pagination_links();
+        let current_page = get_page_number(parts.url()).unwrap_or(1);
+        let last_page = links.last_page_number();
+        self.info = Some(PaginationInfo {
+            current_page,
+            last_page,
+            total_count: None,
+            incomplete_results: None,
+        });
+        self.next_url = links.next;
+        self.buf.handle_parts(parts);
+    }
+
+    fn handle_bytes(&mut self, buf: &[u8]) {
+        self.buf.handle_bytes(buf);
+    }
+
+    fn end(self) -> Result<Self::Output, Self::Error> {
+        let page = serde_json::from_slice::<Page<T>>(&self.buf)?;
+        let mut info = self.info.expect("handle_parts() should have been called");
+        info.total_count = page.total_count;
+        info.incomplete_results = page.incomplete_results;
+        Ok(PageResponse {
+            next_url: self.next_url,
+            info,
+            items: page.items,
+        })
+    }
+}
+
+// PaginationRequest trait
+// PageRequest impl of Request
 
 #[cfg(test)]
 mod tests {
@@ -118,8 +197,8 @@ mod tests {
                             power: 42,
                         },
                     ],
-                    total: None,
-                    incomplete: None,
+                    total_count: None,
+                    incomplete_results: None,
                 }
             );
         }
@@ -159,8 +238,8 @@ mod tests {
                             power: 42,
                         },
                     ],
-                    total: Some(17),
-                    incomplete: None,
+                    total_count: Some(17),
+                    incomplete_results: None,
                 }
             );
         }
@@ -199,8 +278,8 @@ mod tests {
                             power: 42,
                         },
                     ],
-                    total: None,
-                    incomplete: None,
+                    total_count: None,
+                    incomplete_results: None,
                 }
             );
         }
@@ -241,8 +320,8 @@ mod tests {
                             power: 42,
                         },
                     ],
-                    total: Some(17),
-                    incomplete: None,
+                    total_count: Some(17),
+                    incomplete_results: None,
                 }
             );
         }
@@ -316,8 +395,8 @@ mod tests {
                             power: 42,
                         },
                     ],
-                    total: Some(100),
-                    incomplete: Some(true),
+                    total_count: Some(100),
+                    incomplete_results: Some(true),
                 }
             );
         }
