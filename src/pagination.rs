@@ -1,9 +1,11 @@
 use crate::{
-    errors::CommonError, parser::ResponseParser, response::ResponseParts, util::get_page_number,
-    HeaderMapExt, HttpUrl,
+    errors::CommonError, parser::ResponseParser, request::Request, response::ResponseParts,
+    util::get_page_number, Endpoint, HeaderMapExt, HttpUrl, Method,
 };
+use http::header::HeaderMap;
 use serde::{de::DeserializeOwned, Deserialize};
 use std::marker::PhantomData;
+use std::time::Duration;
 use thiserror::Error;
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
@@ -147,8 +149,99 @@ impl<T: DeserializeOwned> ResponseParser for PageParser<T> {
     }
 }
 
-// PaginationRequest trait
-// PageRequest impl of Request
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PageRequest<T> {
+    endpoint: Endpoint,
+    params: Vec<(String, String)>,
+    headers: HeaderMap,
+    timeout: Option<Duration>,
+    _items: PhantomData<T>,
+}
+
+impl<T> PageRequest<T> {
+    pub fn new(endpoint: Endpoint) -> PageRequest<T> {
+        PageRequest {
+            endpoint,
+            params: Vec::new(),
+            headers: HeaderMap::new(),
+            timeout: None,
+            _items: PhantomData,
+        }
+    }
+
+    pub fn with_params(mut self, params: Vec<(String, String)>) -> Self {
+        self.params = params;
+        self
+    }
+
+    pub fn with_headers(mut self, headers: HeaderMap) -> Self {
+        self.headers = headers;
+        self
+    }
+
+    pub fn with_timeout(mut self, timeout: Option<Duration>) -> Self {
+        self.timeout = timeout;
+        self
+    }
+
+    pub fn with_page_number(mut self, page: u64) -> Self {
+        self.params.push(("page".into(), page.to_string()));
+        self
+    }
+}
+
+impl<T: DeserializeOwned + Send> Request for PageRequest<T> {
+    type Output = PageResponse<T>;
+    type Error = CommonError;
+    type Body = ();
+
+    fn endpoint(&self) -> Endpoint {
+        self.endpoint.clone()
+    }
+
+    fn method(&self) -> Method {
+        Method::Get
+    }
+
+    fn headers(&self) -> HeaderMap {
+        self.headers.clone()
+    }
+
+    fn params(&self) -> Vec<(String, String)> {
+        self.params.clone()
+    }
+
+    fn timeout(&self) -> Option<Duration> {
+        self.timeout
+    }
+
+    fn body(&self) -> Self::Body {}
+
+    fn parser(
+        &self,
+    ) -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>> + Send {
+        PageParser::new()
+    }
+}
+
+pub trait PaginationRequest {
+    type Item: DeserializeOwned + Send;
+
+    fn endpoint(&self) -> Endpoint;
+
+    fn params(&self) -> Vec<(String, String)> {
+        Vec::new()
+    }
+
+    fn headers(&self) -> HeaderMap {
+        HeaderMap::new()
+    }
+
+    // Timeout for each request, not for the whole pagination session
+    fn timeout(&self) -> Option<Duration> {
+        None
+    }
+}
 
 #[cfg(test)]
 mod tests {
