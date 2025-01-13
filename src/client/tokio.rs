@@ -175,3 +175,23 @@ pub trait AsyncBackendResponse: Send {
     fn headers(&self) -> http::header::HeaderMap;
     fn body_reader(self) -> impl tokio::io::AsyncRead + Send + 'static;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn request_is_send() {
+        #[allow(dead_code)]
+        fn require_send<T: Send>(_t: T) {}
+
+        #[allow(dead_code)]
+        fn check<B, R>(client: AsyncClient<B>, req: R)
+        where
+            B: AsyncBackend + Sync,
+            R: Request<Body: AsyncRequestBody<Error: Into<R::Error>>> + Send,
+        {
+            require_send(client.request(req));
+        }
+    }
+}
