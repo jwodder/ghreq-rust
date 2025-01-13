@@ -261,3 +261,23 @@ pub trait ResponseParserExt: ResponseParser {
 }
 
 impl<R: ResponseParser> ResponseParserExt for R {}
+
+#[cfg(all(test, feature = "tokio"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_async_response_is_send() {
+        #[allow(dead_code)]
+        fn require_send<T: Send>(_t: T) {}
+
+        #[allow(dead_code)]
+        fn check<RP, R>(rp: RP, resp: Response<R>)
+        where
+            RP: ResponseParser + Send,
+            R: tokio::io::AsyncRead + Send + 'static,
+        {
+            require_send(rp.parse_async_response(resp));
+        }
+    }
+}
