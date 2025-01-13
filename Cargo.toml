@@ -33,9 +33,13 @@ url = { version = "2.5.4", features = ["serde"] }
 rstest = { version = "0.24.0", default-features = false }
 
 [features]
-examples = ["dep:clap", "dep:gh-token", "serde/derive"]
+examples = ["dep:clap", "dep:gh-token", "serde/derive", "tokio/macros", "tokio/rt"]
 ureq = ["dep:ureq"]
 reqwest = ["dep:futures-util", "dep:reqwest", "dep:tokio-util"]
+
+[[example]]
+name = "show-repo-reqwest"
+required-features = ["examples", "reqwest"]
 
 [[example]]
 name = "show-repo-ureq"
