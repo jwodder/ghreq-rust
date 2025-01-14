@@ -396,6 +396,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ghrepo"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "baf04654ce2e303f24a3c4b88b1c616a108302130889894a1e66c1f79d964ccc"
+
+[[package]]
 name = "ghreq"
 version = "0.1.0-dev"
 dependencies = [
@@ -404,6 +410,7 @@ dependencies = [
  "clap",
  "futures-util",
  "gh-token",
+ "ghrepo",
  "http",
  "indoc",
  "mime",
