@@ -408,6 +408,7 @@ dependencies = [
  "indoc",
  "mime",
  "parse_link_header",
+ "pin-project-lite",
  "reqwest",
  "rstest",
  "serde",

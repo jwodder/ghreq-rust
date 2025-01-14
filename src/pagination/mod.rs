@@ -1,3 +1,8 @@
+#[cfg(feature = "tokio")]
+mod stream;
+#[cfg(feature = "tokio")]
+pub use stream::*;
+
 use crate::{
     client::{Backend, Client},
     errors::CommonError,
