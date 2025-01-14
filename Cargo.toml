@@ -37,8 +37,12 @@ rstest = { version = "0.24.0", default-features = false }
 [features]
 examples = ["dep:anyhow", "dep:clap", "dep:gh-token", "tokio?/macros", "tokio?/rt"]
 ureq = ["dep:ureq"]
-reqwest = ["dep:futures-util", "dep:reqwest", "tokio", "dep:tokio-util"]
-tokio = ["dep:tokio"]
+reqwest = ["dep:reqwest", "tokio", "dep:tokio-util"]
+tokio = ["dep:futures-util", "dep:tokio"]
+
+[[example]]
+name = "list-repos-reqwest"
+required-features = ["examples", "reqwest"]
 
 [[example]]
 name = "list-repos-ureq"
