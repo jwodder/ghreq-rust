@@ -1,6 +1,11 @@
 use crate::{
-    errors::CommonError, parser::ResponseParser, request::Request, response::ResponseParts,
-    util::get_page_number, Endpoint, HeaderMapExt, HttpUrl, Method,
+    client::{Backend, Client},
+    errors::CommonError,
+    parser::ResponseParser,
+    request::Request,
+    response::ResponseParts,
+    util::get_page_number,
+    Endpoint, HeaderMapExt, HttpUrl, Method,
 };
 use http::header::HeaderMap;
 use serde::{de::DeserializeOwned, Deserialize};
@@ -241,6 +246,83 @@ pub trait PaginationRequest {
     fn timeout(&self) -> Option<Duration> {
         None
     }
+}
+
+#[derive(Clone, Debug)]
+pub struct PaginationIter<'a, B, R, T> {
+    client: &'a Client<B>,
+    req: R,
+    next_url: Option<Endpoint>,
+    info: Option<PaginationInfo>,
+    items: Option<std::vec::IntoIter<T>>,
+    state: PaginationState,
+}
+
+impl<'a, B, R: PaginationRequest, T> PaginationIter<'a, B, R, T> {
+    pub fn new(client: &'a Client<B>, req: R) -> Self {
+        let next_url = Some(req.endpoint());
+        PaginationIter {
+            client,
+            req,
+            next_url,
+            info: None,
+            items: None,
+            state: PaginationState::NotStarted,
+        }
+    }
+
+    pub fn info(&self) -> Option<PaginationInfo> {
+        self.info
+    }
+
+    pub fn state(&self) -> PaginationState {
+        self.state
+    }
+}
+
+impl<B, R, T> Iterator for PaginationIter<'_, B, R, T>
+where
+    B: Backend,
+    R: PaginationRequest<Item = T>,
+    T: DeserializeOwned + Send,
+{
+    type Item = Result<R::Item, crate::errors::Error<B::Error>>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if let Some(item) = self.items.as_mut().and_then(Iterator::next) {
+                return Some(Ok(item));
+            }
+            if let Some(url) = self.next_url.as_ref() {
+                let mut req = PageRequest::new(url.clone())
+                    .with_headers(self.req.headers())
+                    .with_timeout(self.req.timeout());
+                if self.state == PaginationState::NotStarted {
+                    req = req.with_params(self.req.params());
+                }
+                let page_resp = match self.client.request(req) {
+                    Ok(r) => r,
+                    Err(e) => return Some(Err(e)),
+                };
+                self.state = PaginationState::Paging;
+                self.next_url = page_resp.next_url.map(Into::into);
+                self.items = Some(page_resp.items.into_iter());
+                self.info = Some(page_resp.info);
+            } else {
+                self.state = PaginationState::Ended;
+                self.items = None;
+                self.info = None;
+                return None;
+            }
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+pub enum PaginationState {
+    NotStarted,
+    Paging,
+    Ended,
 }
 
 #[cfg(test)]
