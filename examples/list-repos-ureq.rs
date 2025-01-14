@@ -8,7 +8,6 @@ use ghreq::{
     client::ClientConfig, pagination::PaginationRequest, ureq::UreqError, Endpoint, HttpUrl,
 };
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::process::ExitCode;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -102,13 +101,12 @@ fn main() -> ExitCode {
                 }
             }
             Err(e) => {
-                // Use anyhow to get the error chain displayed
+                // Use anyhow to display the error chain
                 let e = anyhow::Error::new(e);
                 eprintln!("{e:?}");
                 if let Some(body) = e
-                    .downcast::<UreqError>()
-                    .ok()
-                    .and_then(|e| e.pretty_text().map(Cow::into_owned))
+                    .downcast_ref::<UreqError>()
+                    .and_then(UreqError::pretty_text)
                 {
                     eprintln!("\n{body}");
                 }
