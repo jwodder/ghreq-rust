@@ -1,4 +1,4 @@
-use crate::HttpUrl;
+use crate::{util::get_page_number, HttpUrl};
 use mime::{Mime, JSON};
 
 pub trait HeaderMapExt {
@@ -65,4 +65,22 @@ pub struct PaginationLinks {
     pub prev: Option<HttpUrl>,
     pub next: Option<HttpUrl>,
     pub last: Option<HttpUrl>,
+}
+
+impl PaginationLinks {
+    pub fn first_page_number(&self) -> Option<u64> {
+        self.first.as_ref().and_then(get_page_number)
+    }
+
+    pub fn prev_page_number(&self) -> Option<u64> {
+        self.prev.as_ref().and_then(get_page_number)
+    }
+
+    pub fn next_page_number(&self) -> Option<u64> {
+        self.next.as_ref().and_then(get_page_number)
+    }
+
+    pub fn last_page_number(&self) -> Option<u64> {
+        self.last.as_ref().and_then(get_page_number)
+    }
 }

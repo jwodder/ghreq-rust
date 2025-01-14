@@ -118,7 +118,7 @@ impl ResponseParser for LossyUtf8Text {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct JsonResponse<T> {
     buf: Vec<u8>,
     _output: PhantomData<T>,
@@ -130,6 +130,12 @@ impl<T> JsonResponse<T> {
             buf: Vec::new(),
             _output: PhantomData,
         }
+    }
+}
+
+impl<T> Default for JsonResponse<T> {
+    fn default() -> JsonResponse<T> {
+        JsonResponse::new()
     }
 }
 

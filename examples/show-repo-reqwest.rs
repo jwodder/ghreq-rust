@@ -9,9 +9,11 @@ use ghreq::{
     errors::CommonError,
     parser::{JsonResponse, ResponseParser},
     request::Request,
+    reqwest::ReqwestError,
     Endpoint, HttpUrl, Method,
 };
 use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::process::ExitCode;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -121,9 +123,15 @@ async fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(e) => {
-            eprintln!("{e}");
-            if let Some(body) = e.pretty_text() {
-                eprintln!("{body}");
+            // Use anyhow to get the error chain displayed
+            let e = anyhow::Error::new(e);
+            eprintln!("{e:?}");
+            if let Some(body) = e
+                .downcast::<ReqwestError>()
+                .ok()
+                .and_then(|e| e.pretty_text().map(Cow::into_owned))
+            {
+                eprintln!("\n{body}");
             }
             ExitCode::FAILURE
         }

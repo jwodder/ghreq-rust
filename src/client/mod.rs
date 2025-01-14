@@ -7,6 +7,7 @@ use crate::{
         DEFAULT_USER_AGENT,
     },
     errors::{Error, ErrorPayload, ErrorResponseParser},
+    pagination::{PaginationIter, PaginationRequest},
     parser::ResponseParserExt,
     request::{Request, RequestBody},
     response::{Response, ResponseParts},
@@ -416,5 +417,9 @@ impl<B: Backend> Client<B> {
                 )
             })
         }
+    }
+
+    pub fn paginate<R: PaginationRequest>(&self, req: R) -> PaginationIter<'_, B, R, R::Item> {
+        PaginationIter::new(self, req)
     }
 }

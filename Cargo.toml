@@ -12,6 +12,7 @@ categories = ["api-bindings", "asynchronous"]
 exclude = ["/.*"]
 
 [dependencies]
+anyhow = { version = "1.0.95", optional = true }
 bstr = "1.11.3"
 clap = { version = "4.5.26", optional = true, features = ["derive"] }
 futures-util = { version = "0.3.31", default-features = false, features = ["std"], optional = true }
@@ -19,8 +20,9 @@ gh-token = { version = "0.1.7", optional = true }
 http = "1.2.0"
 mime = "0.3.17"
 parse_link_header = { version = "0.4.0", features = ["url"] }
+pin-project-lite = "0.2.16"
 reqwest = { version = "0.12.12", optional = true, features = ["json", "stream"] }
-serde = "1.0.217"
+serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.135"
 thiserror = "2.0.11"
 tokio = { version = "1.43.0", "features" = ["fs", "io-util"], optional = true }
@@ -29,13 +31,22 @@ ureq = { version = "2.12.1", optional = true, features = ["json"] }
 url = { version = "2.5.4", features = ["serde"] }
 
 [dev-dependencies]
+indoc = "2.0.5"
 rstest = { version = "0.24.0", default-features = false }
 
 [features]
-examples = ["dep:clap", "dep:gh-token", "serde/derive", "tokio?/macros", "tokio?/rt"]
+examples = ["dep:anyhow", "dep:clap", "dep:gh-token", "tokio?/macros", "tokio?/rt"]
 ureq = ["dep:ureq"]
-reqwest = ["dep:futures-util", "dep:reqwest", "tokio", "dep:tokio-util"]
-tokio = ["dep:tokio"]
+reqwest = ["dep:reqwest", "tokio", "dep:tokio-util"]
+tokio = ["dep:futures-util", "dep:tokio"]
+
+[[example]]
+name = "list-repos-reqwest"
+required-features = ["examples", "reqwest"]
+
+[[example]]
+name = "list-repos-ureq"
+required-features = ["examples", "ureq"]
 
 [[example]]
 name = "show-repo-reqwest"
