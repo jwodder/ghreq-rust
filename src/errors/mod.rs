@@ -73,7 +73,7 @@ impl<BackendError: StdError + 'static, E: StdError + 'static> fmt::Display
 
 impl<BackendError: StdError + 'static, E: StdError + 'static> StdError for Error<BackendError, E> {
     fn source(&self) -> Option<&(dyn StdError + 'static)> {
-        Some(&self.payload)
+        self.payload.source()
     }
 }
 
@@ -88,8 +88,8 @@ pub enum ErrorPayload<BackendError, E = CommonError> {
     #[error("failed to send request")]
     Send(#[source] BackendError),
 
-    #[error("server responded with status {}", .0.status())]
-    Status(#[source] ErrorResponse),
+    #[error(transparent)]
+    Status(ErrorResponse),
 
     #[error(transparent)]
     ParseResponse(ParseResponseError<E>),
