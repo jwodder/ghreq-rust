@@ -302,7 +302,13 @@ where
                 }
                 let page_resp = match self.client.request(req) {
                     Ok(r) => r,
-                    Err(e) => return Some(Err(e)),
+                    Err(e) => {
+                        self.next_url = None;
+                        self.state = PaginationState::Ended;
+                        self.items = None;
+                        self.info = None;
+                        return Some(Err(e));
+                    }
                 };
                 self.state = PaginationState::Paging;
                 self.next_url = page_resp.next_url.map(Into::into);
@@ -316,6 +322,14 @@ where
             }
         }
     }
+}
+
+impl<B, R, T> std::iter::FusedIterator for PaginationIter<'_, B, R, T>
+where
+    B: Backend,
+    R: PaginationRequest<Item = T>,
+    T: DeserializeOwned + Send,
+{
 }
 
 #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
