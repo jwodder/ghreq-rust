@@ -12,6 +12,7 @@ categories = ["api-bindings", "asynchronous"]
 exclude = ["/.*"]
 
 [dependencies]
+anyhow = { version = "1.0.95", optional = true }
 bstr = "1.11.3"
 clap = { version = "4.5.26", optional = true, features = ["derive"] }
 futures-util = { version = "0.3.31", default-features = false, features = ["std"], optional = true }
@@ -33,10 +34,14 @@ indoc = "2.0.5"
 rstest = { version = "0.24.0", default-features = false }
 
 [features]
-examples = ["dep:clap", "dep:gh-token", "tokio?/macros", "tokio?/rt"]
+examples = ["dep:anyhow", "dep:clap", "dep:gh-token", "tokio?/macros", "tokio?/rt"]
 ureq = ["dep:ureq"]
 reqwest = ["dep:futures-util", "dep:reqwest", "tokio", "dep:tokio-util"]
 tokio = ["dep:tokio"]
+
+[[example]]
+name = "list-repos-ureq"
+required-features = ["examples", "ureq"]
 
 [[example]]
 name = "show-repo-reqwest"
