@@ -1,20 +1,13 @@
+mod base;
 pub mod client;
 pub mod consts;
-mod endpoint;
 pub mod errors;
-mod header_ext;
-mod http_url;
-mod method;
 pub mod pagination;
 pub mod parser;
 pub mod request;
 pub mod response;
 mod util;
-
-pub use crate::endpoint::*;
-pub use crate::header_ext::*;
-pub use crate::http_url::*;
-pub use crate::method::*;
+pub use crate::base::*;
 
 /// Re-export of [`http::header`]
 pub use http::header;
