@@ -12,16 +12,16 @@ use std::task::{ready, Context, Poll};
 
 pin_project! {
     #[must_use = "streams do nothing unless polled"]
-    pub struct PaginationStream<B, R, T, BE> {
+    pub struct PaginationStream<B: AsyncBackend, R: PaginationRequest> {
         client: AsyncClient<B>,
         req: R,
-        inner: InnerState<T, BE>,
+        inner: InnerState<R::Item, B::Error>,
         info: Option<PaginationInfo>,
         state: PaginationState,
     }
 }
 
-impl<B, R: PaginationRequest, T, BE> PaginationStream<B, R, T, BE> {
+impl<B: AsyncBackend, R: PaginationRequest> PaginationStream<B, R> {
     pub fn new(client: AsyncClient<B>, req: R) -> Self {
         let next_url = Some(req.endpoint());
         PaginationStream {
@@ -45,13 +45,12 @@ impl<B, R: PaginationRequest, T, BE> PaginationStream<B, R, T, BE> {
     }
 }
 
-impl<B, R, T, BE> Stream for PaginationStream<B, R, T, BE>
+impl<B, R> Stream for PaginationStream<B, R>
 where
-    B: AsyncBackend<Error = BE> + Clone + Send + Sync + 'static,
-    R: PaginationRequest<Item = T>,
-    T: DeserializeOwned + Send + 'static,
+    B: AsyncBackend + Clone + Send + Sync + 'static,
+    R: PaginationRequest<Item: DeserializeOwned + Send + 'static>,
 {
-    type Item = Result<R::Item, Error<BE>>;
+    type Item = Result<R::Item, Error<B::Error>>;
 
     fn poll_next(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         let this = self.project();
@@ -102,11 +101,10 @@ where
     }
 }
 
-impl<B, R, T, BE> FusedStream for PaginationStream<B, R, T, BE>
+impl<B, R> FusedStream for PaginationStream<B, R>
 where
-    B: AsyncBackend<Error = BE> + Clone + Send + Sync + 'static,
-    R: PaginationRequest<Item = T>,
-    T: DeserializeOwned + Send + 'static,
+    B: AsyncBackend + Clone + Send + Sync + 'static,
+    R: PaginationRequest<Item: DeserializeOwned + Send + 'static>,
 {
     fn is_terminated(&self) -> bool {
         self.state == PaginationState::Ended
@@ -133,11 +131,10 @@ mod tests {
         fn require_send<T: Send>(_t: T) {}
 
         #[allow(dead_code)]
-        fn check<B, R, T, BE>(stream: PaginationStream<B, R, T, BE>)
+        fn check<B, R>(stream: PaginationStream<B, R>)
         where
-            B: AsyncBackend<Error = BE> + Clone + Send + Sync + 'static,
-            R: PaginationRequest<Item = T> + Send,
-            T: DeserializeOwned + Send + 'static,
+            B: AsyncBackend + Clone + Send + Sync + 'static,
+            R: PaginationRequest<Item: DeserializeOwned + Send + 'static> + Send,
         {
             tokio::pin!(stream);
             require_send(stream.next());

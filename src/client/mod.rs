@@ -419,7 +419,7 @@ impl<B: Backend> Client<B> {
         }
     }
 
-    pub fn paginate<R: PaginationRequest>(&self, req: R) -> PaginationIter<'_, B, R, R::Item> {
+    pub fn paginate<R: PaginationRequest>(&self, req: R) -> PaginationIter<'_, B, R> {
         PaginationIter::new(self, req)
     }
 }

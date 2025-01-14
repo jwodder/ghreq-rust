@@ -254,16 +254,16 @@ pub trait PaginationRequest {
 }
 
 #[derive(Clone, Debug)]
-pub struct PaginationIter<'a, B, R, T> {
+pub struct PaginationIter<'a, B, R: PaginationRequest> {
     client: &'a Client<B>,
     req: R,
     next_url: Option<Endpoint>,
     info: Option<PaginationInfo>,
-    items: Option<std::vec::IntoIter<T>>,
+    items: Option<std::vec::IntoIter<R::Item>>,
     state: PaginationState,
 }
 
-impl<'a, B, R: PaginationRequest, T> PaginationIter<'a, B, R, T> {
+impl<'a, B, R: PaginationRequest> PaginationIter<'a, B, R> {
     pub fn new(client: &'a Client<B>, req: R) -> Self {
         let next_url = Some(req.endpoint());
         PaginationIter {
@@ -285,11 +285,10 @@ impl<'a, B, R: PaginationRequest, T> PaginationIter<'a, B, R, T> {
     }
 }
 
-impl<B, R, T> Iterator for PaginationIter<'_, B, R, T>
+impl<B, R> Iterator for PaginationIter<'_, B, R>
 where
     B: Backend,
-    R: PaginationRequest<Item = T>,
-    T: DeserializeOwned + Send,
+    R: PaginationRequest<Item: DeserializeOwned + Send>,
 {
     type Item = Result<R::Item, crate::errors::Error<B::Error>>;
 
@@ -329,11 +328,10 @@ where
     }
 }
 
-impl<B, R, T> std::iter::FusedIterator for PaginationIter<'_, B, R, T>
+impl<B, R> std::iter::FusedIterator for PaginationIter<'_, B, R>
 where
     B: Backend,
-    R: PaginationRequest<Item = T>,
-    T: DeserializeOwned + Send,
+    R: PaginationRequest<Item: DeserializeOwned + Send>,
 {
 }
 

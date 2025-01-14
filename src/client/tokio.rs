@@ -82,10 +82,7 @@ impl<B: AsyncBackend + Sync> AsyncClient<B> {
 }
 
 impl<B: AsyncBackend + Clone + Sync> AsyncClient<B> {
-    pub fn paginate<R: PaginationRequest>(
-        &self,
-        req: R,
-    ) -> PaginationStream<B, R, R::Item, B::Error> {
+    pub fn paginate<R: PaginationRequest>(&self, req: R) -> PaginationStream<B, R> {
         PaginationStream::new(self.clone(), req)
     }
 }
