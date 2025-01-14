@@ -6,5 +6,16 @@
 
 [GitHub](https://github.com/jwodder/ghreq-rust) | [Issues](https://github.com/jwodder/ghreq-rust/issues)
 
-`ghreq` is a minimal yet opinionated client for the GitHub REST API.  It's also
-a work in progress.  Watch this space.
+`ghreq` is an extensible sync & async [Rust](https://www.rust-lang.org) client
+library for the [GitHub REST API](https://docs.github.com/en/rest).
+
+Most GitHub REST API libraries have a problem: They define exactly what fields
+you can send in requests and exactly what fields they'll parse from responses.
+Unfortunately, the GitHub REST API changes often, frequently adding request &
+response fields, and the libraries don't always stay up to date.  Even worse is
+when the API adds a whole new endpoint and your favorite library doesn't
+support making any requests at all to it!
+
+<!-- TODO: Distinguish from <https://github.com/XAMPPRocky/octocrab> -->
+
+<!-- Based on architecture described in <https://users.rust-lang.org/t/34567/3> -->
