@@ -4,6 +4,7 @@
 //! cargo run --example show-repo-reqwest --features examples,reqwest -- <args>
 //! ```
 use clap::Parser;
+use ghrepo::GHRepo;
 use ghreq::{
     client::ClientConfig,
     errors::CommonError,
@@ -17,8 +18,7 @@ use std::process::ExitCode;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct ShowRepository {
-    owner: String,
-    name: String,
+    spec: GHRepo,
 }
 
 impl Request for ShowRepository {
@@ -27,7 +27,7 @@ impl Request for ShowRepository {
     type Body = ();
 
     fn endpoint(&self) -> Endpoint {
-        Endpoint::from_iter(["repos", &self.owner, &self.name])
+        Endpoint::from_iter(["repos", self.spec.owner(), self.spec.name()])
     }
 
     fn method(&self) -> Method {
@@ -60,8 +60,8 @@ struct Arguments {
     #[arg(short = 'J', long)]
     json: bool,
 
-    owner: String,
-    name: String,
+    #[arg(value_name = "OWNER/NAME")]
+    spec: GHRepo,
 }
 
 #[tokio::main(flavor = "current_thread")]
@@ -78,10 +78,7 @@ async fn main() -> ExitCode {
         }
     }
     let client = cfg.with_reqwest();
-    let req = ShowRepository {
-        owner: args.owner,
-        name: args.name,
-    };
+    let req = ShowRepository { spec: args.spec };
     match client.request(req).await {
         Ok(repo) => {
             if args.json {
