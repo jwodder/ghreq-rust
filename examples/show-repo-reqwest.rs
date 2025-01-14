@@ -13,7 +13,6 @@ use ghreq::{
     Endpoint, HttpUrl, Method,
 };
 use serde::{Deserialize, Serialize};
-use std::borrow::Cow;
 use std::process::ExitCode;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -123,13 +122,12 @@ async fn main() -> ExitCode {
             ExitCode::SUCCESS
         }
         Err(e) => {
-            // Use anyhow to get the error chain displayed
+            // Use anyhow to display the error chain
             let e = anyhow::Error::new(e);
             eprintln!("{e:?}");
             if let Some(body) = e
-                .downcast::<ReqwestError>()
-                .ok()
-                .and_then(|e| e.pretty_text().map(Cow::into_owned))
+                .downcast_ref::<ReqwestError>()
+                .and_then(ReqwestError::pretty_text)
             {
                 eprintln!("\n{body}");
             }
