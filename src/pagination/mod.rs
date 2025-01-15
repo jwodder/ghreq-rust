@@ -26,11 +26,11 @@ pub struct Page<T> {
     pub incomplete_results: Option<bool>,
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq)]
+#[derive(Clone, Debug, Deserialize, PartialEq)]
 #[serde(untagged)]
 enum RawPage<T> {
     Array(Vec<T>),
-    Map(serde_json::Map<String, serde_json::Value>),
+    Map(std::collections::HashMap<String, MapPageValue<T>>),
 }
 
 impl<T: DeserializeOwned> TryFrom<RawPage<T>> for Page<T> {
@@ -44,29 +44,23 @@ impl<T: DeserializeOwned> TryFrom<RawPage<T>> for Page<T> {
                 incomplete_results: None,
             }),
             RawPage::Map(map) => {
-                let total_count = map
-                    .get("total_count")
-                    .and_then(|v| v.as_number())
-                    .and_then(serde_json::Number::as_u64);
+                let total_count = map.get("total_count").and_then(MapPageValue::as_u64);
                 let incomplete_results = map
                     .get("incomplete_results")
-                    .and_then(serde_json::Value::as_bool);
+                    .and_then(MapPageValue::as_bool);
                 let mut lists = map
                     .into_values()
-                    .filter(serde_json::Value::is_array)
+                    .filter_map(MapPageValue::into_list)
                     .collect::<Vec<_>>();
                 if lists.len() == 1 {
-                    let Some(lst) = lists.pop() else {
+                    let Some(items) = lists.pop() else {
                         unreachable!("Vec with 1 item should have something to pop");
                     };
-                    match serde_json::from_value::<Vec<T>>(lst) {
-                        Ok(items) => Ok(Page {
-                            items,
-                            total_count,
-                            incomplete_results,
-                        }),
-                        Err(e) => Err(ParsePageError::DeserList(e)),
-                    }
+                    Ok(Page {
+                        items,
+                        total_count,
+                        incomplete_results,
+                    })
                 } else {
                     Err(ParsePageError::ListQty(lists.len()))
                 }
@@ -75,13 +69,45 @@ impl<T: DeserializeOwned> TryFrom<RawPage<T>> for Page<T> {
     }
 }
 
+#[derive(Clone, Debug, Deserialize, PartialEq)]
+#[serde(untagged)]
+enum MapPageValue<T> {
+    Count(u64),
+    Bool(bool),
+    List(Vec<T>),
+    Other(serde::de::IgnoredAny),
+}
+
+impl<T> MapPageValue<T> {
+    fn as_u64(&self) -> Option<u64> {
+        if let MapPageValue::Count(value) = self {
+            Some(*value)
+        } else {
+            None
+        }
+    }
+
+    fn as_bool(&self) -> Option<bool> {
+        if let MapPageValue::Bool(value) = self {
+            Some(*value)
+        } else {
+            None
+        }
+    }
+
+    fn into_list(self) -> Option<Vec<T>> {
+        if let MapPageValue::List(lst) = self {
+            Some(lst)
+        } else {
+            None
+        }
+    }
+}
+
 #[derive(Debug, Error)]
 enum ParsePageError {
-    #[error("expected exactly one array field in map page response, got {0} array fields")]
+    #[error("expected exactly one array of items in map page response, got {0}")]
     ListQty(usize),
-
-    #[error("failed to deserialize an element of array field in map page response")]
-    DeserList(#[source] serde_json::Error),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -538,6 +564,54 @@ mod tests {
                     }
                 ],
                 "modes": ["ponens", "tollens"]
+            }
+            "#};
+            let page = serde_json::from_str::<Page<Widget>>(src).unwrap();
+            assert_eq!(
+                page,
+                Page {
+                    items: vec![
+                        Widget {
+                            name: "Steve".into(),
+                            color: "aquamarine".into(),
+                            power: 9001,
+                        },
+                        Widget {
+                            name: "Widget O'Malley".into(),
+                            color: "taupe".into(),
+                            power: 42,
+                        },
+                    ],
+                    total_count: Some(17),
+                    incomplete_results: None,
+                }
+            );
+        }
+
+        #[test]
+        fn from_map_extra_item_list_field() {
+            let src = indoc! {r#"
+            {
+                "total_count": 17,
+                "widgets": [
+                    {
+                        "name": "Steve",
+                        "color": "aquamarine",
+                        "power": 9001
+                    },
+                    {
+                        "name": "Widget O'Malley",
+                        "color": "taupe",
+                        "power": 42
+                    }
+                ],
+                "more_widgets": [
+                    {
+                        "name": "Gidget",
+                        "color": "chartreuse",
+                        "power": 23
+                    }
+                ],
             }
             "#};
             assert!(serde_json::from_str::<Page<Widget>>(src).is_err());
