@@ -86,7 +86,9 @@ enum ParsePageError {
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct PaginationInfo {
-    pub current_page: u64,
+    // When this is None, you're either on the first page (for most endpoints)
+    // or the pagination doesn't use page numbers (e.g., /repositories).
+    pub current_page: Option<u64>,
     pub last_page: Option<u64>,
     pub total_count: Option<u64>,
     pub incomplete_results: Option<bool>,
@@ -130,7 +132,7 @@ impl<T: DeserializeOwned> ResponseParser for PageParser<T> {
 
     fn handle_parts(&mut self, parts: &ResponseParts) {
         let links = parts.headers().pagination_links();
-        let current_page = get_page_number(parts.url()).unwrap_or(1);
+        let current_page = get_page_number(parts.url());
         let last_page = links.last_page_number();
         self.info = Some(PaginationInfo {
             current_page,
