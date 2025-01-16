@@ -1,10 +1,24 @@
 use crate::{util::get_page_number, HttpUrl};
 use mime::{Mime, JSON};
 
+/// Additional utility methods added to [`http::header::HeaderMap`]
 pub trait HeaderMapExt {
+    /// Returns true if the headers contain a `Content-Type` header with a
+    /// value of "application/json" or "application/{something}+json".
     fn content_type_is_json(&self) -> bool;
+
+    /// Returns the value of the `Content-Length` header as a `u64`.  Returns
+    /// `None` if the header is not set or the value could not be parsed into a
+    /// `u64`.
     fn content_length(&self) -> Option<u64>;
+
+    /// Set the value of the `Content-Length` header to the given integer value.
     fn set_content_length(&mut self, length: u64);
+
+    /// Parse the value of the `Link` header and return the links with
+    /// `rel` types of "first", "prev", "next", and "last".  If there is no
+    /// `Link` header or it could not be parsed, all fields in the returned
+    /// structure are `None`.
     fn pagination_links(&self) -> PaginationLinks;
 }
 
