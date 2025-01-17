@@ -10,6 +10,7 @@ use futures_util::TryStreamExt;
 use std::future::Future;
 use tokio_util::io::{ReaderStream, StreamReader};
 
+/// An asynchronous client backed by [`reqwest`]
 pub type ReqwestClient = AsyncClient<reqwest::Client>;
 
 impl AsyncBackend for reqwest::Client {
@@ -55,6 +56,14 @@ impl AsyncBackendResponse for reqwest::Response {
     }
 }
 
+/// Error type returned by [`ReqwestClient`] methods.
+///
+/// The `E` parameter is the `Error` type of the input
+/// [`Request`][crate::request::Request] provided to a method.
 pub type ReqwestError<E = CommonError> = Error<reqwest::Error, E>;
 
+/// Payload of errors returned by [`ReqwestClient`] methods.
+///
+/// The `E` parameter is the `Error` type of the input
+/// [`Request`][crate::request::Request] provided to a method.
 pub type ReqwestErrorPayload<E = CommonError> = ErrorPayload<reqwest::Error, E>;

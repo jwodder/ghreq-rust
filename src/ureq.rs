@@ -5,6 +5,7 @@ use crate::{
 };
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 
+/// A synchronous client backed by [`ureq`]
 pub type UreqClient = Client<ureq::Agent>;
 
 impl Backend for ureq::Agent {
@@ -71,6 +72,14 @@ impl BackendResponse for ureq::Response {
     }
 }
 
+/// Error type returned by [`UreqClient`] methods.
+///
+/// The `E` parameter is the `Error` type of the input
+/// [`Request`][crate::request::Request] provided to a method.
 pub type UreqError<E = CommonError> = Error<ureq::Error, E>;
 
+/// Payload of errors returned by [`UreqClient`] methods.
+///
+/// The `E` parameter is the `Error` type of the input
+/// [`Request`][crate::request::Request] provided to a method.
 pub type UreqErrorPayload<E = CommonError> = ErrorPayload<ureq::Error, E>;

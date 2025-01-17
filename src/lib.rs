@@ -1,3 +1,4 @@
+#![cfg_attr(docsrs, feature(doc_cfg))]
 mod base;
 pub mod client;
 pub mod consts;
@@ -16,7 +17,9 @@ pub use http::header;
 pub use http::status;
 
 #[cfg(feature = "reqwest")]
+#[cfg_attr(docsrs, doc(cfg(feature = "reqwest")))]
 pub mod reqwest;
 
 #[cfg(feature = "ureq")]
+#[cfg_attr(docsrs, doc(cfg(feature = "ureq")))]
 pub mod ureq;
