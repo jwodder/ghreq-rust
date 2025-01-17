@@ -94,7 +94,7 @@ impl TryFrom<http::Method> for Method {
     }
 }
 
-/// Error returned when parsing a method name fails
+/// Error returned by [`Method`]'s `FromStr` implementation
 #[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 #[error("invalid method name")]
 pub struct ParseMethodError;

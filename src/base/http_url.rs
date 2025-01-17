@@ -115,11 +115,7 @@ impl std::str::FromStr for HttpUrl {
 
     fn from_str(s: &str) -> Result<HttpUrl, ParseHttpUrlError> {
         let url = s.parse::<Url>()?;
-        if matches!(url.scheme(), "http" | "https") {
-            Ok(HttpUrl(url))
-        } else {
-            Err(ParseHttpUrlError::BadScheme)
-        }
+        HttpUrl::try_from(url).map_err(Into::into)
     }
 }
 
@@ -143,15 +139,23 @@ impl<'de> Deserialize<'de> for HttpUrl {
 /// Error returned by [`HttpUrl`]'s `FromStr` implementation
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 pub enum ParseHttpUrlError {
-    /// The string was a valid URL, but the scheme was neither HTTP nor HTTPS
-    #[error(r#"URL scheme must be "http" or "https""#)]
-    BadScheme,
-
     /// The string was not a valid URL
     #[error(transparent)]
     Url(#[from] url::ParseError),
+
+    /// The string was a valid URL, but the scheme was neither HTTP nor HTTPS
+    #[error(r#"URL scheme must be "http" or "https""#)]
+    NotHttp,
 }
 
+impl From<NotHttpError> for ParseHttpUrlError {
+    fn from(_: NotHttpError) -> ParseHttpUrlError {
+        ParseHttpUrlError::NotHttp
+    }
+}
+
+/// Error returned when attempting to convert a [`url::Url`] with a scheme that
+/// is neither HTTP nor HTTPS into an [`HttpUrl`]
 #[derive(Clone, Copy, Debug, Eq, Error, PartialEq)]
 #[error(r#"URL scheme must be "http" or "https""#)]
 pub struct NotHttpError;
