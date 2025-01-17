@@ -73,27 +73,55 @@ impl HeaderMapExt for http::header::HeaderMap {
     }
 }
 
+/// A set of pagination-related URLs parsed from a `Link` header
 #[derive(Clone, Debug, Default, Eq, Hash, PartialEq)]
 pub struct PaginationLinks {
+    /// The link with `rel` link type "first", if any
     pub first: Option<HttpUrl>,
+
+    /// The link with `rel` link type "prev", if any
     pub prev: Option<HttpUrl>,
+
+    /// The link with `rel` link type "next", if any
     pub next: Option<HttpUrl>,
+
+    /// The link with `rel` link type "last", if any
     pub last: Option<HttpUrl>,
 }
 
 impl PaginationLinks {
+    /// Extracts the value of the `page` query parameter from
+    /// [`PaginationLinks::first`].
+    ///
+    /// Returns `None` if the field is `None`, if there is no `page` parameter,
+    /// or if the value could not be parsed into a `u64`.
     pub fn first_page_number(&self) -> Option<u64> {
         self.first.as_ref().and_then(get_page_number)
     }
 
+    /// Extracts the value of the `page` query parameter from
+    /// [`PaginationLinks::prev`].
+    ///
+    /// Returns `None` if the field is `None`, if there is no `page` parameter,
+    /// or if the value could not be parsed into a `u64`.
     pub fn prev_page_number(&self) -> Option<u64> {
         self.prev.as_ref().and_then(get_page_number)
     }
 
+    /// Extracts the value of the `page` query parameter from
+    /// [`PaginationLinks::next`].
+    ///
+    /// Returns `None` if the field is `None`, if there is no `page` parameter,
+    /// or if the value could not be parsed into a `u64`.
     pub fn next_page_number(&self) -> Option<u64> {
         self.next.as_ref().and_then(get_page_number)
     }
 
+    /// Extracts the value of the `page` query parameter from
+    /// [`PaginationLinks::last`].
+    ///
+    /// Returns `None` if the field is `None`, if there is no `page` parameter,
+    /// or if the value could not be parsed into a `u64`.
     pub fn last_page_number(&self) -> Option<u64> {
         self.last.as_ref().and_then(get_page_number)
     }
