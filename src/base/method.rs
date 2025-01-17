@@ -13,6 +13,7 @@ pub enum Method {
 }
 
 impl Method {
+    /// Returns the name of the method as an uppercase ASCII string
     pub fn as_str(&self) -> &'static str {
         match self {
             Method::Get => "GET",
@@ -24,6 +25,8 @@ impl Method {
         }
     }
 
+    /// Returns true if this is a mutating method (i.e., POST, PUT, PATCH, or
+    /// DELETE).
     pub fn is_mutating(&self) -> bool {
         matches!(
             self,
@@ -41,6 +44,7 @@ impl fmt::Display for Method {
 impl std::str::FromStr for Method {
     type Err = ParseMethodError;
 
+    /// Parse a method from its name, case insensitive
     fn from_str(s: &str) -> Result<Method, ParseMethodError> {
         match s.to_ascii_uppercase().as_str() {
             "GET" => Ok(Method::Get),
@@ -55,6 +59,7 @@ impl std::str::FromStr for Method {
 }
 
 impl From<Method> for http::Method {
+    /// Convert a `Method` to an [`http::Method`]
     fn from(value: Method) -> http::Method {
         match value {
             Method::Get => http::Method::GET,
@@ -70,6 +75,12 @@ impl From<Method> for http::Method {
 impl TryFrom<http::Method> for Method {
     type Error = MethodConvertError;
 
+    /// Convert an [`http::Method`] to a `Method`
+    ///
+    /// # Errors
+    ///
+    /// Returns `Err` if the input method does not correspond to one of the
+    /// variants of `Method`.
     fn try_from(value: http::Method) -> Result<Method, MethodConvertError> {
         match value {
             http::Method::GET => Ok(Method::Get),
@@ -83,13 +94,19 @@ impl TryFrom<http::Method> for Method {
     }
 }
 
+/// Error returned by [`Method`]'s `FromStr` implementation
 #[derive(Clone, Copy, Debug, Eq, Error, Hash, PartialEq)]
 #[error("invalid method name")]
 pub struct ParseMethodError;
 
+/// Error returned when trying to convert an [`http::Method`] that does not
+/// exist in [`Method`] to the latter type
 #[derive(Clone, Debug, Eq, Error, PartialEq)]
 #[error("method {0} is not supported by ghreq")]
-pub struct MethodConvertError(pub http::Method);
+pub struct MethodConvertError(
+    /// The input [`http::Method`] that could not be converted
+    pub http::Method,
+);
 
 #[cfg(test)]
 mod tests {

@@ -1,10 +1,14 @@
 use crate::HttpUrl;
 
+/// Extract the value of the `page` query parameter from the given URL.
+/// Returns `None` if there is no `page` parameter or if the value could not be
+/// parsed into a `u64`.
+///
+/// Experimentation on 2025-01-13 indicates that, when making a paginated
+/// request to GitHub with one or more "page" query parameters, the server
+/// honors only the last such parameter, and if it's not a number, it's
+/// discarded.
 pub(crate) fn get_page_number(url: &HttpUrl) -> Option<u64> {
-    // Experimentation on 2025-01-13 indicates that, when making a paginated
-    // request to GitHub with one or more "page" query parameters, the server
-    // honors only the last such parameter, and if it's not a number, it's
-    // discarded.
     url.as_url()
         .query_pairs()
         .filter_map(|(k, v)| (k == "page").then_some(v))
