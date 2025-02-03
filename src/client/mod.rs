@@ -36,10 +36,13 @@ use crate::request::AsyncRequestBody;
 # Example
 
 ```
+# use ghreq::client::ClientConfig;
+# use ghreq::header::HeaderValue;
 let client = ClientConfig::new()
     .with_auth_token("hunter2")
-    .with_user_agent("my-custom-client/v1.2.3")
-    .with_backend(ureq::Agent::new())
+    .unwrap()
+    .with_user_agent(HeaderValue::from_static("my-custom-client/v1.2.3"))
+    .with_backend(ureq::Agent::new());
 ```
 "##
 )]
