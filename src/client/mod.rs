@@ -1,4 +1,5 @@
 #[cfg(feature = "tokio")]
+#[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
 pub mod tokio;
 
 use crate::{
@@ -21,6 +22,30 @@ use self::tokio::AsyncClient;
 #[cfg(feature = "tokio")]
 use crate::request::AsyncRequestBody;
 
+/// Configuration for a GitHub REST API client
+///
+/// Create a `ClientConfig` with [`ClientConfig::new()`], chain calls to zero
+/// or more of its `with_*` methods to modify the settings of your choice, and
+/// then call [`ClientConfig::with_backend()`] or
+/// [`ClientConfig::with_async_backend()`] to combine the configuration with a
+/// backend and thereby acquire a [`Client`] or [`AsyncClient`].
+#[cfg_attr(
+    feature = "ureq",
+    doc = r##"
+
+# Example
+
+```
+# use ghreq::client::ClientConfig;
+# use ghreq::header::HeaderValue;
+let client = ClientConfig::new()
+    .with_auth_token("hunter2")
+    .unwrap()
+    .with_user_agent(HeaderValue::from_static("my-custom-client/v1.2.3"))
+    .with_backend(ureq::Agent::new());
+```
+"##
+)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ClientConfig {
     base_url: HttpUrl,
@@ -29,6 +54,7 @@ pub struct ClientConfig {
 }
 
 impl ClientConfig {
+    /// Create a new `ClientConfig` with default values
     pub fn new() -> ClientConfig {
         fn parse_const_value(value: &str, name: &str) -> HeaderValue {
             match value.parse::<HeaderValue>() {
@@ -60,11 +86,28 @@ impl ClientConfig {
         }
     }
 
+    /// Set the base API URL for making API requests.
+    ///
+    /// When the resulting client is given a request whose
+    /// [`Endpoint`][crate::Endpoint] is a sequence of path components, those
+    /// components will be appended to this URL.
+    ///
+    /// The default base API URL is given by [`DEFAULT_API_URL`].
     pub fn with_base_url(mut self, url: HttpUrl) -> Self {
         self.base_url = url;
         self
     }
 
+    /// Send the given access token in the "Authorization" header of outgoing
+    /// requests.
+    ///
+    /// By default, no access token is sent.
+    ///
+    /// # Errors
+    ///
+    /// If the string `"Bearer {token}"` cannot be parsed into a
+    /// [`HeaderValue`], then `Err` is returned, containing the unmodified
+    /// `ClientConfig`.
     #[allow(clippy::result_large_err)]
     pub fn with_auth_token(mut self, token: &str) -> Result<Self, Self> {
         let value = format!("Bearer {token}");
@@ -77,31 +120,50 @@ impl ClientConfig {
         }
     }
 
+    /// Set the value to use for the `User-Agent` header in outgoing requests.
+    ///
+    /// The default setting is given by [`DEFAULT_USER_AGENT`].
     pub fn with_user_agent(mut self, value: HeaderValue) -> Self {
         self.headers.insert(http::header::USER_AGENT, value);
         self
     }
 
+    /// Set the value to use for the `Accept` header in outgoing requests.
+    ///
+    /// The default setting is given by [`DEFAULT_ACCEPT`].
     pub fn with_accept(mut self, value: HeaderValue) -> Self {
         self.headers.insert(http::header::ACCEPT, value);
         self
     }
 
+    /// Set the value to use for the `X-GitHub-Api-Version` header in outgoing
+    /// requests.
+    ///
+    /// The default setting is given by [`DEFAULT_API_VERSION`].
     pub fn with_api_version(mut self, value: HeaderValue) -> Self {
         self.headers.insert(API_VERSION_HEADER, value);
         self
     }
 
+    /// Add the given HTTP header & value to all outgoing requests.
     pub fn with_header(mut self, name: HeaderName, value: HeaderValue) -> Self {
         self.headers.insert(name, value);
         self
     }
 
+    /// Set the request timeout (covering the time from the start of the
+    /// connection for a request until the end of the response is received) to
+    /// the given duration.
+    ///
+    /// By default, `ghreq` does not set a timeout, resulting in each backend
+    /// using its own timeout value.
     pub fn set_timeout(mut self, timeout: Duration) -> Self {
         self.timeout = Some(timeout);
         self
     }
 
+    /// Combine the `ClientConfig` with the given synchronous backend (ideally
+    /// an implementor of [`Backend`]) to acquire a synchronous [`Client`].
     pub fn with_backend<B>(self, backend: B) -> Client<B> {
         Client {
             config: self,
@@ -109,7 +171,11 @@ impl ClientConfig {
         }
     }
 
+    /// Combine the `ClientConfig` with the given asynchronous backend (ideally
+    /// an implementor of [`AsyncBackend`][self::tokio::AsyncBackend]) to
+    /// acquire an asynchronous [`AsyncClient`].
     #[cfg(feature = "tokio")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
     pub fn with_async_backend<B>(self, backend: B) -> AsyncClient<B> {
         AsyncClient {
             config: self,
@@ -117,17 +183,24 @@ impl ClientConfig {
         }
     }
 
+    /// Combine the `ClientConfig` with a default [`ureq::Agent`] to acquire an
+    /// [`UreqClient`][crate::ureq::UreqClient].
     #[cfg(feature = "ureq")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "ureq")))]
     pub fn with_ureq(self) -> crate::ureq::UreqClient {
         self.with_backend(ureq::AgentBuilder::new().build())
     }
 
+    /// Combine the `ClientConfig` with a default [`reqwest::Client`] to
+    /// acquire a [`ReqwestClient`][crate::reqwest::ReqwestClient].
     #[cfg(feature = "reqwest")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "reqwest")))]
     pub fn with_reqwest(self) -> crate::reqwest::ReqwestClient {
         self.with_async_backend(reqwest::Client::default())
     }
 
-    // PRIVATE
+    /// [Private] Convert a [`Request`] instance into a [`PreparedRequest`]
+    /// with a [`std::io::Read`] for a body.
     fn prepare_request<R, BE>(
         &self,
         req: &R,
@@ -163,8 +236,10 @@ impl ClientConfig {
         Ok(PreparedRequest::from_parts(parts, body))
     }
 
-    // PRIVATE
+    /// [Private] Convert a [`Request`] instance into a [`PreparedRequest`]
+    /// with a [`tokio::io::AsyncRead`] for a body.
     #[cfg(feature = "tokio")]
+    #[cfg_attr(docsrs, doc(cfg(feature = "tokio")))]
     fn prepare_async_request<R, BE>(
         &self,
         req: &R,
@@ -421,5 +496,15 @@ impl<B: Backend> Client<B> {
 
     pub fn paginate<R: PaginationRequest>(&self, req: R) -> PaginationIter<'_, B, R> {
         PaginationIter::new(self, req)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_client_config_new_succeeds() {
+        let _ = ClientConfig::new();
     }
 }

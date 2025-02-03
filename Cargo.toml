@@ -57,6 +57,10 @@ required-features = ["examples", "reqwest"]
 name = "show-repo-ureq"
 required-features = ["examples", "ureq"]
 
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
 [lints.rust]
 # Lint groups:
 deprecated_safe = { level = "deny", priority = -1 }
