@@ -104,6 +104,15 @@ impl TryFrom<Url> for HttpUrl {
     }
 }
 
+impl From<HttpUrl> for http::uri::Uri {
+    fn from(value: HttpUrl) -> http::uri::Uri {
+        value
+            .to_string()
+            .parse::<http::uri::Uri>()
+            .expect("HttpUrl should be a valid URI")
+    }
+}
+
 impl fmt::Display for HttpUrl {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.0)
