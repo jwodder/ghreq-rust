@@ -42,7 +42,7 @@ let client = ClientConfig::new()
     .with_auth_token("hunter2")
     .unwrap()
     .with_user_agent(HeaderValue::from_static("my-custom-client/v1.2.3"))
-    .with_backend(ureq::Agent::new());
+    .with_backend(ureq::Agent::new_with_defaults());
 ```
 "##
 )]
@@ -188,7 +188,7 @@ impl ClientConfig {
     #[cfg(feature = "ureq")]
     #[cfg_attr(docsrs, doc(cfg(feature = "ureq")))]
     pub fn with_ureq(self) -> crate::ureq::UreqClient {
-        self.with_backend(ureq::AgentBuilder::new().build())
+        self.with_backend(ureq::Agent::new_with_defaults())
     }
 
     /// Combine the `ClientConfig` with a default [`reqwest::Client`] to

@@ -1,74 +1,64 @@
 use crate::{
     client::{Backend, BackendResponse, Client, RequestParts},
     errors::{CommonError, Error, ErrorPayload},
-    HttpUrl,
+    HttpUrl, Method,
 };
-use http::header::{HeaderMap, HeaderName, HeaderValue};
+use http::header::HeaderMap;
+use ureq::{ResponseExt, SendBody};
 
 /// A synchronous client backed by [`ureq`]
 pub type UreqClient = Client<ureq::Agent>;
 
 impl Backend for ureq::Agent {
-    type Request = ureq::Request;
-    type Response = ureq::Response;
+    type Request = ureq::RequestBuilder<ureq::typestate::WithBody>;
+    type Response = http::Response<ureq::Body>;
     type Error = ureq::Error;
 
     fn prepare_request(&self, r: RequestParts) -> Self::Request {
-        let mut req = self.request_url(r.method.as_str(), r.url.as_url());
+        let mut req = match r.method {
+            Method::Get => self.get(r.url).force_send_body(),
+            Method::Head => self.head(r.url).force_send_body(),
+            Method::Post => self.post(r.url),
+            Method::Put => self.put(r.url),
+            Method::Patch => self.patch(r.url),
+            Method::Delete => self.delete(r.url).force_send_body(),
+        };
         for (k, v) in &r.headers {
-            if let Ok(s) = v.to_str() {
-                req = req.set(k.as_str(), s);
-            }
+            req = req.header(k, v);
         }
         if let Some(d) = r.timeout {
-            req = req.timeout(d);
+            req = req.config().timeout_global(Some(d)).build();
         }
-        req
+        req.config().http_status_as_error(false).build()
     }
 
     fn send<R: std::io::Read>(
         &self,
         r: Self::Request,
-        body: R,
+        mut body: R,
     ) -> Result<Self::Response, Self::Error> {
-        match r.send(body) {
-            Ok(resp) => Ok(resp),
-            Err(ureq::Error::Status(_, resp)) => Ok(resp),
-            Err(e) => Err(e),
-        }
+        r.send(SendBody::from_reader(&mut body))
     }
 }
 
-impl BackendResponse for ureq::Response {
+impl BackendResponse for http::Response<ureq::Body> {
     fn url(&self) -> HttpUrl {
-        self.get_url()
+        self.get_uri()
+            .to_string()
             .parse::<HttpUrl>()
             .expect("response URL should be a valid HTTP URL")
     }
 
     fn status(&self) -> http::status::StatusCode {
-        http::status::StatusCode::from_u16(self.status())
-            .expect("response status should be in valid range")
+        self.status()
     }
 
     fn headers(&self) -> HeaderMap {
-        let mut headers = HeaderMap::new();
-        for name in self.headers_names() {
-            let Ok(hname) = name.parse::<HeaderName>() else {
-                continue;
-            };
-            for value in self.all(&name) {
-                let Ok(hvalue) = value.parse::<HeaderValue>() else {
-                    continue;
-                };
-                headers.append(hname.clone(), hvalue);
-            }
-        }
-        headers
+        self.headers().clone()
     }
 
     fn body_reader(self) -> impl std::io::Read {
-        self.into_reader()
+        self.into_body().into_reader()
     }
 }
 
