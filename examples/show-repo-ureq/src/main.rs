@@ -1,8 +1,3 @@
-//! Run with:
-//!
-//! ```
-//! cargo run --example show-repo-reqwest --features examples,reqwest -- <args>
-//! ```
 use clap::Parser;
 use ghrepo::GHRepo;
 use ghreq::{
@@ -10,7 +5,7 @@ use ghreq::{
     errors::CommonError,
     parser::{JsonResponse, ResponseParser},
     request::Request,
-    reqwest::ReqwestError,
+    ureq::UreqError,
     Endpoint, HttpUrl, Method,
 };
 use serde::{Deserialize, Serialize};
@@ -64,8 +59,7 @@ struct Arguments {
     spec: GHRepo,
 }
 
-#[tokio::main(flavor = "current_thread")]
-async fn main() -> ExitCode {
+fn main() -> ExitCode {
     let args = Arguments::parse();
     let mut cfg = ClientConfig::new();
     if let Ok(token) = gh_token::get() {
@@ -77,9 +71,9 @@ async fn main() -> ExitCode {
             }
         }
     }
-    let client = cfg.with_reqwest();
+    let client = cfg.with_ureq();
     let req = ShowRepository { spec: args.spec };
-    match client.request(req).await {
+    match client.request(req) {
         Ok(repo) => {
             if args.json {
                 println!(
@@ -123,8 +117,8 @@ async fn main() -> ExitCode {
             let e = anyhow::Error::new(e);
             eprintln!("{e:?}");
             if let Some(body) = e
-                .downcast_ref::<ReqwestError>()
-                .and_then(ReqwestError::pretty_text)
+                .downcast_ref::<UreqError>()
+                .and_then(UreqError::pretty_text)
             {
                 eprintln!("\n{body}");
             }

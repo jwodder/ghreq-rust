@@ -1,2 +1,2 @@
 [alias]
-lints = ["hack", "--feature-powerset", "clippy", "--all-targets"]
+lints = ["hack", "--workspace", "--feature-powerset", "clippy", "--all-targets"]

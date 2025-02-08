@@ -1,0 +1,21 @@
+[package]
+name = "show-repo-reqwest"
+edition.workspace = true
+rust-version.workspace = true
+#description = ...
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
+
+[dependencies]
+anyhow = "1.0.95"
+clap = { version = "4.5.26", features = ["derive"] }
+gh-token = "0.1.7"
+ghrepo =  "0.7.0"
+ghreq = { path = "../..", features = ["reqwest"] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.135"
+tokio = { version = "1.43.0", "features" = ["macros", "rt"] }
+
+[lints]
+workspace = true
