@@ -1,8 +1,3 @@
-//! Run with:
-//!
-//! ```
-//! cargo run --example list-repos-ureq --features examples,ureq -- <args>
-//! ```
 use clap::Parser;
 use ghreq::{
     client::ClientConfig, pagination::PaginationRequest, ureq::UreqError, Endpoint, HttpUrl,

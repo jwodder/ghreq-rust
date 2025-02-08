@@ -1,23 +1,30 @@
-[package]
-name = "ghreq"
-version = "0.1.0-dev"
+[workspace]
+members = ["examples/*"]
+resolver = "2"
+
+[workspace.package]
 edition = "2021"
 rust-version = "1.79"
-description = "Magical and opinionated GitHub REST API client"
 authors = ["John Thorvald Wodder II <ghreq-rust@varonathe.org>"]
 repository = "https://github.com/jwodder/ghreq-rust"
 license = "MIT"
+
+[package]
+name = "ghreq"
+version = "0.1.0-dev"
+edition.workspace = true
+rust-version.workspace = true
+description = "Magical and opinionated GitHub REST API client"
+authors.workspace = true
+repository.workspace = true
+license.workspace = true
 keywords = ["GitHub", "client", "REST API"]
 categories = ["api-bindings", "asynchronous", "web-programming::http-client"]
 exclude = ["/.*"]
 
 [dependencies]
-anyhow = { version = "1.0.95", optional = true }
 bstr = "1.11.3"
-clap = { version = "4.5.26", optional = true, features = ["derive"] }
 futures-util = { version = "0.3.31", default-features = false, features = ["std"], optional = true }
-gh-token = { version = "0.1.7", optional = true }
-ghrepo = { version = "0.7.0", optional = true }
 http = "1.2.0"
 mime = "0.3.17"
 parse_link_header = { version = "0.4.0", features = ["url"] }
@@ -36,32 +43,18 @@ indoc = "2.0.5"
 rstest = { version = "0.24.0", default-features = false }
 
 [features]
-examples = ["dep:anyhow", "dep:clap", "dep:gh-token", "dep:ghrepo", "tokio?/macros", "tokio?/rt"]
 ureq = ["dep:ureq"]
 reqwest = ["dep:reqwest", "tokio", "dep:tokio-util"]
 tokio = ["dep:futures-util", "dep:tokio"]
-
-[[example]]
-name = "list-repos-reqwest"
-required-features = ["examples", "reqwest"]
-
-[[example]]
-name = "list-repos-ureq"
-required-features = ["examples", "ureq"]
-
-[[example]]
-name = "show-repo-reqwest"
-required-features = ["examples", "reqwest"]
-
-[[example]]
-name = "show-repo-ureq"
-required-features = ["examples", "ureq"]
 
 [package.metadata.docs.rs]
 all-features = true
 rustdoc-args = ["--cfg", "docsrs"]
 
-[lints.rust]
+[lints]
+workspace = true
+
+[workspace.lints.rust]
 # Lint groups:
 deprecated_safe = { level = "deny", priority = -1 }
 future_incompatible = { level = "deny", priority = -1 }
@@ -137,7 +130,7 @@ unused_associated_type_bounds = "deny"
 unused_comparisons = "deny"
 while_true = "deny"
 
-[lints.rustdoc]
+[workspace.lints.rustdoc]
 bare_urls = "deny"
 broken_intra_doc_links = "deny"
 invalid_codeblock_attributes = "deny"
@@ -147,7 +140,7 @@ private_intra_doc_links = "deny"
 redundant_explicit_links = "deny"
 unescaped_backticks = "deny"
 
-[lints.clippy]
+[workspace.lints.clippy]
 # Deny all warn-by-default lints:
 all = { level = "deny", priority = -1 }
 

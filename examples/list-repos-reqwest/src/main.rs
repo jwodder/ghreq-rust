@@ -1,8 +1,3 @@
-//! Run with:
-//!
-//! ```
-//! cargo run --example list-repos-reqwest --features examples,reqwest -- <args>
-//! ```
 use clap::Parser;
 use futures_util::StreamExt;
 use ghreq::{
