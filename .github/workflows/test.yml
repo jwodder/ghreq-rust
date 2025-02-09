@@ -149,7 +149,10 @@ jobs:
         uses: taiki-e/install-action@cargo-hack
 
       - name: Check code
-        run: cargo hack --workspace --feature-powerset clippy --all-targets -- -Dwarnings
+        run: cargo hack --workspace --feature-powerset clippy -- -Dwarnings
+
+      - name: Check tests & examples
+        run: cargo hack --workspace --feature-powerset clippy --tests --examples -- -Dwarnings
 
       - name: Check formatting
         run: cargo fmt --all --check
@@ -172,6 +175,6 @@ jobs:
       - name: Check docs
         run: cargo doc --no-deps --all-features
         env:
-          RUSTDOCFLAGS: -Dwarnings
+          RUSTDOCFLAGS: -Dwarnings --cfg docsrs
 
 # vim:set et sts=2:
