@@ -31,7 +31,7 @@ use crate::request::AsyncRequestBody;
 /// backend and thereby acquire a [`Client`] or [`AsyncClient`].
 #[cfg_attr(
     feature = "ureq",
-    doc = r##"
+    doc = r#"
 
 # Example
 
@@ -44,7 +44,7 @@ let client = ClientConfig::new()
     .with_user_agent(HeaderValue::from_static("my-custom-client/v1.2.3"))
     .with_backend(ureq::Agent::new_with_defaults());
 ```
-"##
+"#
 )]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct ClientConfig {
