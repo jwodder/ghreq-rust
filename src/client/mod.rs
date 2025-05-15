@@ -480,7 +480,7 @@ impl<B: Backend> Client<B> {
             Err(Error::new(
                 initial_url,
                 method,
-                ErrorPayload::Status(err_resp),
+                ErrorPayload::Status(Box::new(err_resp)),
             ))
         } else {
             let parser = req.parser();
