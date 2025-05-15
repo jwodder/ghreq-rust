@@ -89,7 +89,7 @@ pub enum ErrorPayload<BackendError, E = CommonError> {
     Send(#[source] BackendError),
 
     #[error(transparent)]
-    Status(ErrorResponse),
+    Status(Box<ErrorResponse>),
 
     #[error(transparent)]
     ParseResponse(ParseResponseError<E>),
