@@ -32,6 +32,7 @@ impl HeaderMapExt for http::header::HeaderMap {
             })
     }
 
+    #[allow(clippy::return_and_then)]
     fn content_length(&self) -> Option<u64> {
         self.get(http::header::CONTENT_LENGTH)
             .and_then(|v| v.to_str().ok())

@@ -8,6 +8,7 @@ use crate::HttpUrl;
 /// request to GitHub with one or more "page" query parameters, the server
 /// honors only the last such parameter, and if it's not a number, it's
 /// discarded.
+#[allow(clippy::return_and_then)]
 pub(crate) fn get_page_number(url: &HttpUrl) -> Option<u64> {
     url.as_url()
         .query_pairs()
