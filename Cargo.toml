@@ -40,7 +40,7 @@ url = { version = "2.5.4", features = ["serde"] }
 
 [dev-dependencies]
 indoc = "2.0.5"
-rstest = { version = "0.24.0", default-features = false }
+rstest = { version = "0.26.0", default-features = false }
 
 [features]
 ureq = ["dep:ureq"]
