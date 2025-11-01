@@ -3,6 +3,7 @@
 pub mod tokio;
 
 use crate::{
+    HttpUrl, Method,
     consts::{
         API_VERSION_HEADER, DEFAULT_ACCEPT, DEFAULT_API_URL, DEFAULT_API_VERSION,
         DEFAULT_USER_AGENT,
@@ -12,7 +13,6 @@ use crate::{
     parser::ResponseParserExt,
     request::{Request, RequestBody},
     response::{Response, ResponseParts},
-    HttpUrl, Method,
 };
 use http::header::{HeaderMap, HeaderName, HeaderValue};
 use std::time::Duration;
@@ -204,7 +204,7 @@ impl ClientConfig {
     fn prepare_request<R, BE>(
         &self,
         req: &R,
-    ) -> Result<PreparedRequest<impl std::io::Read + 'static>, Error<BE, R::Error>>
+    ) -> Result<PreparedRequest<impl std::io::Read + 'static + use<R, BE>>, Error<BE, R::Error>>
     where
         R: Request<Body: RequestBody<Error: Into<R::Error>>>,
     {

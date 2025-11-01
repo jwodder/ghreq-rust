@@ -1,4 +1,4 @@
-use crate::{errors::CommonError, parser::ResponseParser, Endpoint, HeaderMapExt, Method};
+use crate::{Endpoint, HeaderMapExt, Method, errors::CommonError, parser::ResponseParser};
 use http::header::HeaderMap;
 use serde::Serialize;
 use std::fs::File;
@@ -32,7 +32,7 @@ pub trait Request {
     fn body(&self) -> Self::Body;
 
     fn parser(&self)
-        -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>> + Send;
+    -> impl ResponseParser<Output = Self::Output, Error: Into<Self::Error>> + Send;
 }
 
 impl<T: Request + ?Sized> Request for &T {

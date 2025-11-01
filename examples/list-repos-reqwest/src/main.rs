@@ -1,7 +1,7 @@
 use clap::Parser;
 use futures_util::StreamExt;
 use ghreq::{
-    client::ClientConfig, pagination::PaginationRequest, reqwest::ReqwestError, Endpoint, HttpUrl,
+    Endpoint, HttpUrl, client::ClientConfig, pagination::PaginationRequest, reqwest::ReqwestError,
 };
 use serde::{Deserialize, Serialize};
 use std::process::ExitCode;

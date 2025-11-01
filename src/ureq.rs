@@ -1,7 +1,7 @@
 use crate::{
+    HttpUrl, Method,
     client::{Backend, BackendResponse, Client, RequestParts},
     errors::{CommonError, Error, ErrorPayload},
-    HttpUrl, Method,
 };
 use http::header::HeaderMap;
 use ureq::{ResponseExt, SendBody};

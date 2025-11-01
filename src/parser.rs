@@ -1,8 +1,8 @@
 use crate::{
+    HeaderMapExt,
     consts::READ_BLOCK_SIZE,
     errors::{CommonError, ParseResponseError},
     response::{Response, ResponseParts},
-    HeaderMapExt,
 };
 use bstr::ByteVec;
 use serde::de::DeserializeOwned;
@@ -207,10 +207,10 @@ impl<W: Write> ResponseParser for ToWriter<W> {
     fn handle_parts(&mut self, _parts: &ResponseParts) {}
 
     fn handle_bytes(&mut self, buf: &[u8]) {
-        if self.err.is_none() {
-            if let Err(e) = self.writer.write_all(buf) {
-                self.err = Some(e);
-            }
+        if self.err.is_none()
+            && let Err(e) = self.writer.write_all(buf)
+        {
+            self.err = Some(e);
         }
     }
 

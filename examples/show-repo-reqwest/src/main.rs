@@ -1,12 +1,12 @@
 use clap::Parser;
 use ghrepo::GHRepo;
 use ghreq::{
+    Endpoint, HttpUrl, Method,
     client::ClientConfig,
     errors::CommonError,
     parser::{JsonResponse, ResponseParser},
     request::Request,
     reqwest::ReqwestError,
-    Endpoint, HttpUrl, Method,
 };
 use serde::{Deserialize, Serialize};
 use std::process::ExitCode;
