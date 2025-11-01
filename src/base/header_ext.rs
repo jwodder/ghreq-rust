@@ -1,5 +1,5 @@
-use crate::{util::get_page_number, HttpUrl};
-use mime::{Mime, JSON};
+use crate::{HttpUrl, util::get_page_number};
+use mime::{JSON, Mime};
 
 /// Additional utility methods added to [`http::header::HeaderMap`]
 pub trait HeaderMapExt {

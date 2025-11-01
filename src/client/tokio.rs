@@ -1,11 +1,11 @@
 use super::{ClientConfig, RequestParts};
 use crate::{
+    HttpUrl,
     errors::{Error, ErrorPayload, ErrorResponseParser},
     pagination::{PaginationRequest, PaginationStream},
     parser::ResponseParserExt,
     request::{AsyncRequestBody, Request},
     response::{Response, ResponseParts},
-    HttpUrl,
 };
 use std::future::Future;
 

@@ -1,14 +1,14 @@
 use super::{PageRequest, PageResponse, PaginationInfo, PaginationRequest, PaginationState};
 use crate::{
+    Endpoint,
     client::tokio::{AsyncBackend, AsyncClient},
     errors::Error,
-    Endpoint,
 };
-use futures_util::{future::BoxFuture, stream::FusedStream, FutureExt, Stream};
+use futures_util::{FutureExt, Stream, future::BoxFuture, stream::FusedStream};
 use pin_project_lite::pin_project;
 use serde::de::DeserializeOwned;
 use std::pin::Pin;
-use std::task::{ready, Context, Poll};
+use std::task::{Context, Poll, ready};
 
 pin_project! {
     #[must_use = "streams do nothing unless polled"]
@@ -56,7 +56,7 @@ where
         let this = self.project();
         loop {
             match this.inner {
-                InnerState::Requesting(ref mut fut) => match ready!(fut.as_mut().poll(cx)) {
+                InnerState::Requesting(fut) => match ready!(fut.as_mut().poll(cx)) {
                     Ok(page_resp) => {
                         *this.state = PaginationState::Paging;
                         *this.inner = InnerState::Yielding {
@@ -72,10 +72,7 @@ where
                         return Some(Err(e)).into();
                     }
                 },
-                InnerState::Yielding {
-                    ref mut items,
-                    ref mut next_url,
-                } => {
+                InnerState::Yielding { items, next_url } => {
                     if let Some(value) = items.next() {
                         return Some(Ok(value)).into();
                     } else if let Some(url) = next_url.take() {

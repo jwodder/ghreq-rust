@@ -4,16 +4,16 @@ mod stream;
 pub use stream::*;
 
 use crate::{
+    Endpoint, HeaderMapExt, HttpUrl, Method,
     client::{Backend, Client},
     errors::CommonError,
     parser::ResponseParser,
     request::Request,
     response::ResponseParts,
     util::get_page_number,
-    Endpoint, HeaderMapExt, HttpUrl, Method,
 };
 use http::header::HeaderMap;
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::{Deserialize, de::DeserializeOwned};
 use std::marker::PhantomData;
 use std::time::Duration;
 use thiserror::Error;

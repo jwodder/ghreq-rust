@@ -1,8 +1,8 @@
 use super::CommonError;
 use crate::{
+    HeaderMapExt, HttpUrl, Method,
     parser::ResponseParser,
     response::{Response, ResponseParts},
-    HeaderMapExt, HttpUrl, Method,
 };
 use std::borrow::Cow;
 use thiserror::Error;

@@ -97,7 +97,7 @@ pub enum ErrorPayload<BackendError, E = CommonError> {
 
 impl<BackendError, E> ErrorPayload<BackendError, E> {
     pub fn pretty_text(&self) -> Option<Cow<'_, str>> {
-        if let ErrorPayload::Status(ref r) = self {
+        if let ErrorPayload::Status(r) = self {
             r.pretty_text()
         } else {
             None

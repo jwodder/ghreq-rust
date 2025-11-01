@@ -1,8 +1,8 @@
 use crate::Endpoint;
 use serde::{
+    Deserialize, Serialize,
     de::{Deserializer, Error},
     ser::Serializer,
-    Deserialize, Serialize,
 };
 use std::fmt;
 use thiserror::Error;

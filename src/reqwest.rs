@@ -1,10 +1,10 @@
 use crate::{
+    HttpUrl,
     client::{
-        tokio::{AsyncBackend, AsyncBackendResponse, AsyncClient},
         RequestParts,
+        tokio::{AsyncBackend, AsyncBackendResponse, AsyncClient},
     },
     errors::{CommonError, Error, ErrorPayload},
-    HttpUrl,
 };
 use futures_util::TryStreamExt;
 use std::future::Future;

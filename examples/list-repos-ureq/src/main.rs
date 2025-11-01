@@ -1,6 +1,6 @@
 use clap::Parser;
 use ghreq::{
-    client::ClientConfig, pagination::PaginationRequest, ureq::UreqError, Endpoint, HttpUrl,
+    Endpoint, HttpUrl, client::ClientConfig, pagination::PaginationRequest, ureq::UreqError,
 };
 use serde::{Deserialize, Serialize};
 use std::process::ExitCode;
